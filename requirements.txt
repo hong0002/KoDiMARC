@@ -1,0 +1,10 @@
+torch
+transformers
+peft
+bitsandbytes
+PyYAML
+tqdm
+ujson
+kss
+sentencepiece
+unsloth

@@ -1,0 +1,2 @@
+{"id":"sample-1","source":"toy-nli","premise":"비가 내리기 시작했다.","hypothesis":"우산을 챙겼다.","nli_label":"entailment","logic_label":null,"step1_topk_markers":["그래서","또한"],"step1_topk_scores":[0.82,0.18]}
+{"id":"sample-2","source":"toy-logic","premise":"실험은 실패했다.","hypothesis":"원인은 확인되었다.","nli_label":null,"logic_label":"역접","step1_topk_markers":["그러나","한편"],"step1_topk_scores":[0.74,0.26]}

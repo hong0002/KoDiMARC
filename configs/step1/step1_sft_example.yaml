@@ -1,0 +1,36 @@
+model:
+  base_model: kakaocorp/kanana-1.5-8b-instruct-2505
+  dtype: float16
+  device_map: auto
+  quant_type: 8bit
+  max_length: 256
+
+lora:
+  enable: true
+  rank: 64
+  alpha: 128
+  dropout: 0.0
+
+data:
+  train_path: data/processed/kowiki/dp_sft_train.jsonl
+  valid_path: data/processed/kowiki/dp_sft_valid.jsonl
+  max_length: 256
+  max_samples: null
+
+training:
+  output_dir: outputs/step1_sft_example
+  num_epochs: 1
+  batch_size: 1
+  gradient_accumulation: 16
+  lr: 1.0e-5
+  warmup_steps: 200
+  save_steps: 1000
+  logging_steps: 20
+  seed: 42
+  eval_steps: 1000
+  dataloader_num_workers: 4
+  logging_dir: logs
+  gradient_checkpointing: false
+  early_stopping_patience: 3
+  early_stopping_threshold: 0.0
+  load_best_model_at_end: true
