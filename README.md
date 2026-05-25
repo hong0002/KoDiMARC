@@ -1,129 +1,249 @@
 # KoDiMARC
 
-## Project Overview
-KoDiMARC (Korean Discourse Marker-aware Relation Classifier) is a two-stage framework for Korean sentence-pair relation classification. The repository accompanies a paper submission and is organized as a public reproducibility release rather than a full data release. It provides the core implementation for weakly supervised discourse marker generation in Step1 and marker-aware multi-task relation classification in Step2.
+## Title
+KoDiMARC: Korean Discourse Marker-aware Relation Classifier
 
-## Method Summary
-KoDiMARC consists of two connected stages. Step1 detects explicit discourse markers from Korean Wikipedia sentence pairs, removes the marker from the hypothesis, and trains a response-only discourse marker generator under weak supervision. The trained Step1 model is then used to attach top-k discourse marker candidates and scores to downstream sentence pairs. Step2 consumes these candidate markers together with Korean NLI and AI Malpyeong relation labels, and trains a two-view multi-task classifier with no-marker, with-marker, and wrong-marker evaluation modes.
+## Description
+KoDiMARC is a two-stage framework for Korean sentence-pair relation classification. The repository accompanies a manuscript submission and is intended as a reproducibility release for the algorithms and source code used in the study.
 
-## Repository Structure
+The framework first learns to generate Korean discourse markers from weakly supervised Korean Wikipedia sentence pairs. It then uses predicted discourse marker candidates as additional relation-aware signals for multi-task classification over Korean natural language inference and Korean logical-relation data.
+
+This repository provides:
+- Source code for data preparation, weak-supervision construction, model training, and evaluation.
+- Example configuration files for Step1 and Step2 experiments.
+- Small sample JSONL files that document the expected input formats.
+- Reproducibility notes and step-by-step workflow documentation.
+
+This repository does not provide the full raw datasets or trained checkpoints because of licensing, redistribution, and storage constraints.
+
+## Dataset Information
+The full experiments require local access to the following external resources:
+- Korean Wikipedia / KoWiki extracted text for weakly supervised discourse marker data construction.
+- KorNLI data for Korean NLI labels: `entailment`, `neutral`, and `contradiction`.
+- AI Malpyeong logical-relation data for Korean logic labels such as `순접`, `역접`, `양립`, `인과`, `양보`, `조건`, `설명`, and `예시`.
+- A compatible Korean instruction-tuned base language model. The public example configs use `kakaocorp/kanana-1.5-8b-instruct-2505`.
+
+The repository includes only toy examples under `data/sample/`:
+- `data/sample/step1_sample.jsonl`: example Step1 weak-supervision rows with sentence pairs, detected markers, marker-removed hypotheses, and marker categories.
+- `data/sample/step2_sample.jsonl`: example Step2 rows with premise/hypothesis text, task labels, and Step1 top-k marker predictions.
+
+The sample files are for schema inspection only. They are not sufficient to reproduce the manuscript results.
+
+Recommended local data layout:
+```text
+data/
+├── raw/
+│   ├── ai_malpyeong/
+│   ├── kornli/
+│   └── kowiki/extracted/
+└── processed/
+    ├── kowiki/
+    └── multitask_nli/final/
+```
+
+Create this layout with:
+```bash
+python scripts/setup_data_layout.py --root .
+```
+
+## Code Information
+The implementation is organized as follows:
 ```text
 KoDiMARC/
 ├── README.md
 ├── LICENSE
-├── .gitignore
 ├── requirements.txt
 ├── configs/
-├── scripts/
-├── src/
+│   ├── step1/
+│   └── step2/
 ├── data/
-│   ├── raw/
-│   ├── processed/
 │   └── sample/
-└── docs/
+├── docs/
+├── scripts/
+│   ├── step1/
+│   └── step2/
+└── src/kodimarc/
+    ├── common/
+    ├── step1/
+    └── step2/
 ```
 
-## Installation
+Important code paths:
+- `src/kodimarc/common/markers.py`: discourse marker lexicon, marker categories, and relation/category mappings.
+- `scripts/step1/`: KoWiki sentence-pair construction, marker detection/removal, Step1 SFT data generation, Step1 training, and top-k marker scoring.
+- `src/kodimarc/step1/`: Step1 model, dataset, and marker-detection support code.
+- `scripts/step2/`: KorNLI/AI Malpyeong preparation, final Step2 JSONL construction, Step2 training, and evaluation.
+- `src/kodimarc/step2/`: Step2 dataset loading, model, training loop, objectives, memory bank, metrics, and evaluation utilities.
+- `configs/`: editable YAML configuration files used by the public workflows.
+- `docs/step1.md`, `docs/step2.md`, and `docs/reproducibility.md`: expanded workflow notes.
+
+## Requirements
+Install dependencies in a Python virtual environment:
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Data Preparation
-This repository does not include KorNLI, AI Malpyeong, or KoWiki data because of licensing and redistribution constraints. Users should prepare the raw datasets separately and point the scripts or configs to their local data locations. The `data/sample/` directory only provides small toy examples that illustrate the expected JSONL format.
+The required Python packages are listed in `requirements.txt`:
+```text
+torch
+transformers
+peft
+bitsandbytes
+PyYAML
+tqdm
+ujson
+kss
+sentencepiece
+unsloth
+```
 
-To initialize the recommended local folder structure, run:
+Full-scale training uses large language models and is expected to require a CUDA-capable GPU environment. Users should adjust batch size, gradient accumulation, quantization, and model paths in the YAML configs according to their local hardware.
+
+## Methodology
+KoDiMARC contains two connected algorithmic stages.
+
+### Step1: Discourse Marker Generator
+Step1 builds weakly supervised marker-generation data from KoWiki:
+1. Convert extracted KoWiki documents into adjacent sentence pairs.
+2. Detect explicit Korean discourse markers with a rule-based lexicon.
+3. Remove detected marker spans from the second sentence to create marker-removed hypotheses.
+4. Convert the labeled pairs into response-only supervised fine-tuning examples.
+5. Fine-tune a Korean instruction-tuned language model to generate the missing discourse marker.
+6. Use the trained Step1 model to attach top-k marker candidates and scores to downstream sentence-pair data.
+
+The discourse marker categories are:
+- `ADD`
+- `CONTRAST`
+- `CAUSAL`
+- `EXPLAN`
+- `CONCESS`
+- `COND`
+- `EXAMPLE`
+
+### Step2: Marker-aware Multi-task Relation Classifier
+Step2 trains a multi-task Korean sentence-pair classifier:
+1. Prepare KorNLI and AI Malpyeong examples in a common JSONL format.
+2. Attach Step1 top-k discourse marker candidates to each sentence pair.
+3. Train a marker-aware classifier with no-marker and predicted-marker views.
+4. Optionally sample wrong-marker views for corruption-based robustness objectives.
+5. Evaluate saved runs in `NO`, `WITH`, and optional `WRONG` modes.
+
+The classifier supports marker dropout, marker corruption, marker-relation compatibility supervision, supervised contrastive learning, and a WITH-WRONG margin objective. These settings are controlled by the Step2 YAML config files.
+
+## Usage Instructions
+The recommended reproducibility workflow is to run each stage explicitly. Commands below assume that raw datasets have already been placed under `data/raw/` and that paths in the YAML configs have been checked for the local machine.
+
+### 1. Prepare the repository layout
 ```bash
 python scripts/setup_data_layout.py --root .
 ```
 
-This creates directories such as:
-- `data/raw/kowiki/extracted`
-- `data/raw/kornli`
-- `data/raw/ai_malpyeong`
-- `data/processed/kowiki`
-- `data/processed/multitask_nli/final`
-- `outputs/step1_sft_example`
-- `outputs/marker_sensitive`
-
-## Step1: Discourse Marker Generator
-Step1 builds adjacent KoWiki sentence pairs, detects explicit discourse markers with a rule-based lexicon, creates marker-removed hypotheses, and converts the resulting weak supervision into response-only SFT JSONL files.
-
-The recommended workflow is documented in detail in [`docs/step1.md`](docs/step1.md):
-1. Build adjacent sentence pairs.
-2. Detect and remove explicit discourse markers.
-3. Build response-only SFT data.
-4. Train the Step1 generator.
-5. Score top-k candidate markers for downstream data.
-
-## Step2: Marker-aware Multi-task Relation Classifier
-Step2 trains a marker-aware relation classifier over Korean NLI labels (`entailment`, `neutral`, `contradiction`) and AI Malpyeong logic labels (`forward`, `contrastive`, `compatible`). It uses a no-marker view and a predicted-marker view during training, and can additionally sample wrong-marker views for corruption-based contrastive supervision and robustness evaluation.
-
-The recommended workflow is documented in detail in [`docs/step2.md`](docs/step2.md):
-1. Materialize final Step2 JSONL files under `data/processed/multitask_nli/final/`.
-2. Train the marker-aware multi-task classifier.
-3. Evaluate the saved run in `NO`, `WITH`, and optional `WRONG` modes.
-
-The default public Step2 example config reflects the marker-sensitive main setting used for the paper-facing runs, with KL consistency disabled by default.
-
-## Evaluation Modes: NO / WITH / WRONG
-- `NO`: no-marker view
-- `WITH`: predicted-marker view using Step1 candidates
-- `WRONG`: wrong-marker view using forbidden-category or corrupted markers
-
-## Recommended Usage Flow
-The repository is easier to understand if the two stages are run step by step instead of through a single shell wrapper.
-
-### Step1 walkthrough
+### 2. Build Step1 weak-supervision data
 ```bash
-python scripts/setup_data_layout.py --root .
+python scripts/step1/build_sentence_pairs.py \
+  --input-dir data/raw/kowiki/extracted \
+  --output-jsonl data/processed/kowiki/wiki_pairs.jsonl
 
-python scripts/step1/build_sentence_pairs.py   --input-dir data/raw/kowiki/extracted   --output-jsonl data/processed/kowiki/wiki_pairs.jsonl
+python scripts/step1/detect_and_remove_markers.py \
+  --input-jsonl data/processed/kowiki/wiki_pairs.jsonl \
+  --output-jsonl data/processed/kowiki/wiki_pairs_labeled.jsonl
 
-python scripts/step1/detect_and_remove_markers.py   --input-jsonl data/processed/kowiki/wiki_pairs.jsonl   --output-jsonl data/processed/kowiki/wiki_pairs_labeled.jsonl
-
-python scripts/step1/build_sft_data.py   --input-jsonl data/processed/kowiki/wiki_pairs_labeled.jsonl   --train-output data/processed/kowiki/dp_sft_0train.jsonl   --valid-output data/processed/kowiki/dp_sft_valid.jsonl   --test-output data/processed/kowiki/dp_sft_test.jsonl
-
-python scripts/step1/train_step1_generator.py   --config configs/step1/step1_sft_example.yaml
+python scripts/step1/build_sft_data.py \
+  --input-jsonl data/processed/kowiki/wiki_pairs_labeled.jsonl \
+  --train-output data/processed/kowiki/dp_sft_train.jsonl \
+  --valid-output data/processed/kowiki/dp_sft_valid.jsonl \
+  --test-output data/processed/kowiki/dp_sft_test.jsonl
 ```
 
-### Build the final Step2 split files
+### 3. Train the Step1 generator
 ```bash
-python scripts/step2/build_final_step2_data.py   --kornli-dir data/raw/kornli   --ai-malpyeong-dir data/raw/ai_malpyeong   --step1-model-name-or-path /path/to/step1_checkpoint   --base-model-name-or-path kakaocorp/kanana-1.5-8b-instruct-2505   --output-dir data/processed/multitask_nli/final   --top-k 5   --fallback
+python scripts/step1/train_step1_generator.py \
+  --config configs/step1/step1_sft_example.yaml
 ```
 
-This command creates:
+The trained checkpoint is written to the output directory configured in `configs/step1/step1_sft_example.yaml`.
+
+### 4. Build final Step2 JSONL files
+```bash
+python scripts/step2/build_final_step2_data.py \
+  --kornli-dir data/raw/kornli \
+  --ai-malpyeong-dir data/raw/ai_malpyeong \
+  --step1-model-name-or-path /path/to/step1_checkpoint \
+  --base-model-name-or-path kakaocorp/kanana-1.5-8b-instruct-2505 \
+  --output-dir data/processed/multitask_nli/final \
+  --top-k 5 \
+  --fallback
+```
+
+Expected output files:
 - `data/processed/multitask_nli/final/train.jsonl`
 - `data/processed/multitask_nli/final/dev_nli.jsonl`
 - `data/processed/multitask_nli/final/dev_logic.jsonl`
 - `data/processed/multitask_nli/final/test_nli.jsonl`
 - `data/processed/multitask_nli/final/test_logic.jsonl`
+- `data/processed/multitask_nli/final/build_manifest.json`
 
-### Step2 walkthrough
+### 5. Train Step2
 ```bash
-python scripts/step2/train_step2.py   --config configs/step2/step2_full_example.yaml
-
-python scripts/step2/evaluate_step2.py   --config /path/to/run_dir/config_used.yaml   --exp marker_sensitive
+python scripts/step2/train_step2.py \
+  --config configs/step2/step2_full_example.yaml
 ```
 
+The default public Step2 example reflects the marker-sensitive setting used for paper-facing runs, with KL consistency disabled by default.
+
+### 6. Evaluate Step2
+```bash
+python scripts/step2/evaluate_step2.py \
+  --config /path/to/run_dir/config_used.yaml \
+  --exp marker_sensitive
+```
+
+Evaluation modes:
+- `NO`: evaluate the no-marker view.
+- `WITH`: evaluate the predicted-marker view using Step1 candidates.
+- `WRONG`: evaluate a corrupted or forbidden-category wrong-marker view when enabled.
+
 ### Optional convenience wrapper
-An optional helper script is still provided for users who already understand the full workflow:
+An optional helper script is provided for users who already understand the full workflow:
 ```bash
 bash scripts/run_example_pipeline.sh
 ```
-For first-time users, reading [`docs/step1.md`](docs/step1.md), [`docs/step2.md`](docs/step2.md), and [`docs/reproducibility.md`](docs/reproducibility.md) first is recommended.
+
+For first-time reproduction, the explicit commands above and the detailed notes in `docs/step1.md`, `docs/step2.md`, and `docs/reproducibility.md` are recommended.
 
 ## Reproducibility Notes
-- Raw datasets are not distributed in this repository.
-- Sample JSONL files are provided only to illustrate the expected format.
-- Example configs use relative paths or placeholders and should be adapted locally.
-- Model checkpoints and experiment outputs are intentionally excluded.
-- Large-scale reproduction of the paper results requires local access to the original datasets and sufficient GPU resources.
-- The public workflow is designed so that users can reconstruct the processed `final/*.jsonl` Step2 inputs from raw data and a locally trained Step1 checkpoint.
+Exact numerical reproduction depends on:
+- The specific versions and preprocessing state of KoWiki, KorNLI, and AI Malpyeong.
+- Local access permissions and licenses for those datasets.
+- The base model and tokenizer version.
+- The trained Step1 checkpoint used to generate top-k markers.
+- GPU hardware, numerical precision, quantization, random seed, and stochastic training behavior.
 
-## Citation
-Citation information will be added after publication.
+The public release is designed to reconstruct the raw-data-to-results code path, including Step1 weak-supervision data, Step1 SFT data, final Step2 JSONL files, Step2 checkpoints, and evaluation outputs, when the required external datasets and model weights are available locally.
+
+## References
+If this repository is used in research, please cite the accompanying KoDiMARC manuscript once citation information is available.
+
+Users should also follow the citation and license requirements of the external resources used in their reproduction:
+- Korean Wikipedia / KoWiki dump or extracted text source.
+- KorNLI.
+- AI Malpyeong logical-relation data.
+- The selected Korean base language model, such as `kakaocorp/kanana-1.5-8b-instruct-2505`.
+
+Citation information for the KoDiMARC manuscript will be added after publication.
 
 ## License
 This repository is released under the MIT License. See `LICENSE` for details.
+
+The external datasets and pretrained model weights are not covered by this repository's MIT License. Users are responsible for complying with the licenses and terms of use of each external resource.
+
+## Contribution Guidelines
+This repository is maintained primarily as a reproducibility release for the accompanying manuscript. Contributions that improve documentation, fix reproducibility bugs, or clarify setup instructions are welcome.
+
+For proposed changes, please include:
+- A clear description of the issue or improvement.
+- The relevant command, config file, or dataset split.
+- Expected and observed behavior when reporting bugs.
+- Environment details for reproducibility issues, including Python version, package versions, GPU type, and CUDA version when applicable.
