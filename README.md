@@ -23,6 +23,18 @@ The full experiments require local access to the following external resources:
 - AI Malpyeong logical-relation data for Korean logic labels such as `순접`, `역접`, `양립`, `인과`, `양보`, `조건`, `설명`, and `예시`.
 - A compatible Korean instruction-tuned base language model. The public example configs use `kakaocorp/kanana-1.5-8b-instruct-2505`.
 
+### External Data Access and Expected Files
+The raw datasets and pretrained model weights are external to this repository. They should be obtained from their original providers and placed under the local paths expected by the scripts.
+
+| Resource | Use in KoDiMARC | Expected local path | Access and license notes |
+| --- | --- | --- | --- |
+| Korean Wikipedia / KoWiki | Step1 weak supervision from adjacent sentence pairs | `data/raw/kowiki/extracted/` | Obtain a Korean Wikipedia dump from [Wikimedia Dumps](https://dumps.wikimedia.org/kowiki/), then extract plain text before running Step1. Record the exact dump date used for reproduction. |
+| KorNLI | Step2 NLI supervision | `data/raw/kornli/` | KorNLI is distributed through the [KorNLU dataset repository](https://github.com/kakaobrain/KorNLUDatasets). Keep the original split names and follow the dataset license/citation terms. |
+| AI Malpyeong logical-relation data | Step2 logical-relation supervision | `data/raw/ai_malpyeong/` | Obtain the Korean sentence-pair logical-relation task data through the National Institute of Korean Language [AI Malpyeong platform](https://kli.korean.go.kr/benchmark/home.do). Follow the platform access and redistribution terms. |
+| `kakaocorp/kanana-1.5-8b-instruct-2505` or compatible model | Step1 generation and Step2 backbone | local Hugging Face cache or model path | The example configs use the [Hugging Face model identifier](https://huggingface.co/kakaocorp/kanana-1.5-8b-instruct-2505). Follow the model card license and usage terms. |
+
+For a submitted reproduction package, record the exact external dataset versions, download dates, and access URLs in the manuscript data availability statement or in a release note accompanying this repository.
+
 The repository includes only toy examples under `data/sample/`:
 - `data/sample/step1_sample.jsonl`: example Step1 weak-supervision rows with sentence pairs, detected markers, marker-removed hypotheses, and marker categories.
 - `data/sample/step2_sample.jsonl`: example Step2 rows with premise/hypothesis text, task labels, and Step1 top-k marker predictions.
@@ -100,6 +112,23 @@ unsloth
 ```
 
 Full-scale training uses large language models and is expected to require a CUDA-capable GPU environment. Users should adjust batch size, gradient accumulation, quantization, and model paths in the YAML configs according to their local hardware.
+
+### Reference Environment
+The lightweight README smoke test was checked in the following local environment:
+- Operating system: Linux `5.15.0-139-generic` on `x86_64`.
+- Python: `3.12.4`.
+- GPU hardware available during validation: 4 x NVIDIA GeForce RTX 3090, 24 GiB each.
+- NVIDIA driver: `535.183.01`.
+
+Package versions observed in the lightweight validation environment:
+- `torch`: `2.6.0`
+- `transformers`: `4.49.0.dev0`
+- `PyYAML`: `6.0.3`
+- `tqdm`: `4.66.4`
+- `ujson`: `5.10.0`
+- `kss`: `6.0.6`
+
+Full Step1/Step2 model training additionally requires the complete package set in `requirements.txt`, including LoRA/quantization-related packages such as `peft`, `bitsandbytes`, `sentencepiece`, and `unsloth`. For exact manuscript reproduction, report the final training environment, CUDA version, GPU model, package versions, random seed, and YAML config files used for the archived run.
 
 ## Methodology
 KoDiMARC contains two connected algorithmic stages.
@@ -213,6 +242,24 @@ bash scripts/run_example_pipeline.sh
 
 For first-time reproduction, the explicit commands above and the detailed notes in `docs/step1.md`, `docs/step2.md`, and `docs/reproducibility.md` are recommended.
 
+## Smoke Test
+The repository includes small sample files that allow a quick no-GPU sanity check of the Step1 data-conversion path. This smoke test verifies that the JSONL schema can be read and converted into response-only SFT examples.
+
+```bash
+python3 scripts/step1/build_sft_data.py \
+  --input-jsonl data/sample/step1_sample.jsonl \
+  --train-output /tmp/kodimarc_step1_train.jsonl \
+  --valid-output /tmp/kodimarc_step1_valid.jsonl \
+  --test-output /tmp/kodimarc_step1_test.jsonl
+```
+
+Expected output for the included toy file:
+```text
+[done] train=2, valid=0, test=0
+```
+
+This smoke test is only a format and code-path check. It does not train a model and does not reproduce the manuscript results.
+
 ## Reproducibility Notes
 Exact numerical reproduction depends on:
 - The specific versions and preprocessing state of KoWiki, KorNLI, and AI Malpyeong.
@@ -222,6 +269,20 @@ Exact numerical reproduction depends on:
 - GPU hardware, numerical precision, quantization, random seed, and stochastic training behavior.
 
 The public release is designed to reconstruct the raw-data-to-results code path, including Step1 weak-supervision data, Step1 SFT data, final Step2 JSONL files, Step2 checkpoints, and evaluation outputs, when the required external datasets and model weights are available locally.
+
+## Code Availability
+The source code is maintained at:
+- Repository: `https://github.com/hong0002/KoDiMARC`
+- License: MIT License, provided in `LICENSE`
+
+For PeerJ review or publication, the reviewed code version should be archived as an immutable release, for example through Zenodo, Figshare, PeerJ supplementary files, or another repository that provides a persistent identifier.
+
+Before submission, record the final archived version here:
+- Archived DOI or persistent URL: to be added after creating the submitted release.
+- Release tag or commit hash: to be added after creating the submitted release.
+- Archive date: to be added after creating the submitted release.
+
+The archived release should correspond to a clean repository state and should include this README, `LICENSE`, `requirements.txt`, `configs/`, `scripts/`, `src/`, `docs/`, and the sample files under `data/sample/`.
 
 ## References
 If this repository is used in research, please cite the accompanying KoDiMARC manuscript once citation information is available.
