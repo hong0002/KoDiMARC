@@ -20,7 +20,7 @@ This repository does not provide the full raw datasets or trained checkpoints be
 The full experiments require local access to the following external resources:
 - Korean Wikipedia / KoWiki extracted text for weakly supervised discourse marker data construction.
 - KorNLI data for Korean NLI labels: `entailment`, `neutral`, and `contradiction`.
-- AI Malpyeong logical-relation data for Korean logic labels such as `순접`, `역접`, `양립`, `인과`, `양보`, `조건`, `설명`, and `예시`.
+- AI Malpyeong logical-relation data for Korean logic labels such as `순접(forward)`, `역접(contrastive)`, `양립(compatible)`, `인과(causal)`, `양보(concessive)`, `조건(conditional)`, `설명(explanatory)`, and `예시(example)`.
 - A compatible Korean instruction-tuned base language model. The public example configs use `kakaocorp/kanana-1.5-8b-instruct-2505`.
 
 ### External Data Access and Expected Files
