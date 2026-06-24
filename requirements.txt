@@ -2,9 +2,16 @@ torch
 transformers
 peft
 bitsandbytes
+accelerate
+datasets
 PyYAML
 tqdm
 ujson
 kss
 sentencepiece
+tokenizers
+numpy
+pandas
+scikit-learn
+scipy
 unsloth

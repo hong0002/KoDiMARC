@@ -1,0 +1,47 @@
+provenance:
+  source: manuscript_reconstructed
+  description: manuscript-reconstructed from PDF Table 10 and local artifacts
+  manuscript_pdf: /data1/jihong/LaTeX_Template_for_PeerJ_Journal_Submissions/main.pdf
+  manuscript_table: Table 10
+  local_artifact_search_roots:
+    - /data1/jihong/multi-task_NLI3
+    - /home/jihong/Multi-Task_NLI
+  note: The original Kanana Step1 YAML was not found in the searched local artifacts; this file records the Step1 settings reported in the manuscript and the model selected for downstream experiments.
+project:
+  name: KoDiMARC
+  stage: Step1 discourse marker generator
+model:
+  base_model: kakaocorp/kanana-1.5-8b-instruct-2505
+  role: manuscript Step1 generator for downstream Step2 top-k marker construction
+training:
+  quantization: 8-bit
+  max_sequence_length: 256
+  epochs: 1
+  per_device_batch_size: 1
+  gradient_accumulation_steps: 16
+  effective_batch_size: 16
+  optimizer: AdamW
+  learning_rate: 1.0e-05
+  warmup_steps: 200
+  lora_rank: 64
+  lora_alpha: 128
+  lora_dropout: 0.0
+  early_stopping:
+    patience: 3
+    threshold: 0.0
+  seed: 42
+data:
+  source: KoWiki-derived weak-supervision corpus
+  task_format: response-only SFT
+  input_fields:
+    - premise
+    - marker_removed_hypothesis
+  output_field: hypothesis_with_discourse_marker
+output:
+  produces:
+    - step1_topk_markers
+    - step1_topk_scores
+    - top1_marker
+  notes:
+    - Full KoWiki-derived training data are not redistributed in this repository.
+    - The base model must be obtained according to the model provider terms.

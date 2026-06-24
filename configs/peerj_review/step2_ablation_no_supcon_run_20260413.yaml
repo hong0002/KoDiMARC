@@ -1,6 +1,5 @@
 seed: 42
 device: auto
-
 paths:
   train_jsonl: datasets/processed/multitask_nli/final/train.jsonl
   dev_kornli_jsonl: datasets/processed/multitask_nli/final/dev_nli.jsonl
@@ -8,7 +7,6 @@ paths:
   test_nli_jsonl: datasets/processed/multitask_nli/final/test_nli.jsonl
   test_logic_jsonl: datasets/processed/multitask_nli/final/test_logic.jsonl
   outputs_root: outputs/marker_sensitive
-
 model:
   name: kakaocorp/kanana-1.5-8b-instruct-2505
   max_seq_length: 512
@@ -17,7 +15,6 @@ model:
   quant_type: 8bit
   device_map: auto
   dtype: bfloat16
-
   lora_r: 64
   lora_alpha: 128
   lora_dropout: 0.0
@@ -29,7 +26,6 @@ model:
     - gate_proj
     - up_proj
     - down_proj
-
 marker:
   topk_temperature: 0.7
   confidence_gating:
@@ -38,29 +34,54 @@ marker:
     apply_eval: true
     temperature: 1.0
     min_top1_prob: 0.45
-    min_top1_gap: 0.10
+    min_top1_gap: 0.1
   dropout_nli_start: 0.02
   dropout_nli_end: 0.12
   dropout_logic_start: 0.05
-  dropout_logic_end: 0.20
-  dropout_unk_boost: 0.10
-  corrupt_prob_nli_start: 0.00
+  dropout_logic_end: 0.2
+  dropout_unk_boost: 0.1
+  corrupt_prob_nli_start: 0.0
   corrupt_prob_nli_end: 0.02
   corrupt_prob_logic_start: 0.01
   corrupt_prob_logic_end: 0.05
   logic_forbidden_categories:
-    역접: ["CAUSAL", "COND", "ADD", "EXAMPLE", "EXPLAN"]
-    순접: ["CONTRAST", "CONCESS", "CAUSAL"]
-    양립: ["CONTRAST", "CONCESS", "CAUSAL", "COND"]
-    인과: ["CONTRAST", "CONCESS", "COND"]
-    양보: ["CAUSAL", "ADD", "EXAMPLE"]
-    조건: ["CAUSAL", "CONTRAST", "CONCESS"]
-    설명: ["CONTRAST", "CONCESS", "COND"]
-    예시: ["CONTRAST", "CONCESS", "CAUSAL"]
-
+    역접:
+      - CAUSAL
+      - COND
+      - ADD
+      - EXAMPLE
+      - EXPLAN
+    순접:
+      - CONTRAST
+      - CONCESS
+      - CAUSAL
+    양립:
+      - CONTRAST
+      - CONCESS
+      - CAUSAL
+      - COND
+    인과:
+      - CONTRAST
+      - CONCESS
+      - COND
+    양보:
+      - CAUSAL
+      - ADD
+      - EXAMPLE
+    조건:
+      - CAUSAL
+      - CONTRAST
+      - CONCESS
+    설명:
+      - CONTRAST
+      - CONCESS
+      - COND
+    예시:
+      - CONTRAST
+      - CONCESS
+      - CAUSAL
 prompt:
   style: candidate_marker_hypothesis
-
 loss:
   lambda_kl: 0.0
   gamma_mrel: 0.2
@@ -77,12 +98,11 @@ loss:
     weight: 0.2
     margin: 0.2
     only_clean: true
-
 train:
   epochs: 1
   batch_size: 2
   grad_accum_steps: 8
-  lr: 1.0e-5
+  lr: 1.0e-05
   weight_decay: 0.0
   warmup_ratio: 0.03
   max_grad_norm: 1.0
@@ -91,29 +111,23 @@ train:
   eval_every_steps: 1000
   early_stop_patience: 10
   early_stop_min_delta: 0.0
-
   supcon_queue:
     nli_size: 1024
     logic_size: 2048
     warmup_steps: 0
-
   task_ratio:
     nli: 3
     logic: 1
-
 evaluation:
   enable_wrong_marker_eval: true
-
 selection_weights:
-  "no": 0.0
+  'no': 0.0
   with: 1.0
   wrong: 0.0
-
 selection:
   metric: with_only
   base_metric: macro_f1
   gap_weight: 0.0
-
 experiments:
   - name: marker_sensitive_no_supcon
     enable_kl: true

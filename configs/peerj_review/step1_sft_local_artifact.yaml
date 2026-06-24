@@ -1,42 +1,38 @@
 model:
-  base_model: "LGAI-EXAONE/EXAONE-4.0-1.2B" #"kakaocorp/kanana-1.5-2.1b-instruct-2505" # instruct-2505
-  dtype: "float16"
+  base_model: LGAI-EXAONE/EXAONE-4.0-1.2B
+  dtype: float16
   device: null
-  device_map: "auto"
-  quant_type: "8bit"
+  device_map: auto
+  quant_type: 8bit
   max_length: 256
-
-  num_labels: 7               # 그냥 맞춰두고
-  cls_loss_weight: 0.0        # 🔴 분류 loss 완전히 OFF
-  contrastive_loss_weight: 0.0  # 🔴 contrastive 완전히 OFF
-  contrastive_temperature: 0.1  # 의미 없음 (그냥 남겨둬도 무관)
-
+  num_labels: 7
+  cls_loss_weight: 0.0
+  contrastive_loss_weight: 0.0
+  contrastive_temperature: 0.1
 lora:
   enable: true
   rank: 64
   alpha: 128
   dropout: 0.0
-
 data:
-  train_path: "datasets/processed/ko_wiki/dp_sft_train.jsonl"
-  valid_path: "datasets/processed/ko_wiki/dp_sft_valid.jsonl"
+  train_path: datasets/processed/ko_wiki/dp_sft_train.jsonl
+  valid_path: datasets/processed/ko_wiki/dp_sft_valid.jsonl
   max_length: 256
-  max_samples: null #10000
-
+  max_samples: null
 training:
-  output_dir: "outputs/담화표지sft_v2/sft_only"
+  output_dir: outputs/담화표지sft_v2/sft_only
   num_epochs: 1
   batch_size: 1
   gradient_accumulation: 16
-  lr: 1.0e-5
+  lr: 1.0e-05
   warmup_steps: 200
   save_steps: 1000
   logging_steps: 20
   seed: 42
   eval_steps: 1000
   dataloader_num_workers: 8
-  logging_dir: "logs"
-  gradient_checkpointing: False
+  logging_dir: logs
+  gradient_checkpointing: false
   early_stopping_patience: 3
   early_stopping_threshold: 0.0
-  load_best_model_at_end: true   # quantized면 자동으로 false로 처리됨
+  load_best_model_at_end: true

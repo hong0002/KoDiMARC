@@ -34,7 +34,7 @@ Files included in this repository:
 - Source code under `src/kodimarc/`.
 - Reproducibility scripts under `scripts/`.
 - Public example configs under `configs/step1/` and `configs/step2/`.
-- Verified local run configs copied from experiment artifacts under `configs/peerj_review/`.
+- Verified local run configs and the manuscript-reconstructed Step1 Kanana config under `configs/peerj_review/`.
 - Workflow documentation under `docs/`.
 - Toy JSONL schema examples under `data/sample/`.
 - `requirements.txt` and `LICENSE`.
@@ -94,7 +94,7 @@ Important documentation:
 - `docs/step2.md`: detailed Step2 workflow.
 - `docs/reproducibility.md`: expanded PeerJ reproducibility notes.
 - `docs/MANUSCRIPT_RUN_MANIFEST.md`: searched local artifact folders, verified configs, result files, and stored environment evidence.
-- `docs/results/README.md`: compact index of result artifacts used for manuscript table reproduction.
+- `docs/results/README.md`: compact index of manuscript table values and local result artifacts used for cross-checking.
 
 ## Algorithm-to-Code Map
 | Manuscript component | Purpose | Concrete repository paths |
@@ -103,7 +103,7 @@ Important documentation:
 | KoWiki sentence-pair construction | Builds adjacent sentence pairs from extracted KoWiki text. | `scripts/step1/build_sentence_pairs.py` |
 | Rule-based marker detection/removal | Detects discourse markers and writes marker-removed hypotheses. | `scripts/step1/detect_and_remove_markers.py`, `src/kodimarc/step1/marker_detection.py` |
 | Step1 SFT data construction | Converts weakly supervised marker rows into response-only SFT JSONL splits. | `scripts/step1/build_sft_data.py`, `src/kodimarc/step1/dataset.py` |
-| Step1 generator training | Fine-tunes the discourse marker generator. | `scripts/step1/train_step1_generator.py`, `src/kodimarc/step1/modeling.py`, `configs/step1/step1_sft_example.yaml`, `configs/peerj_review/step1_sft_local_artifact.yaml` |
+| Step1 generator training | Fine-tunes the discourse marker generator. | `scripts/step1/train_step1_generator.py`, `src/kodimarc/step1/modeling.py`, `configs/peerj_review/step1_kanana_8b_instruct_2505_manuscript.yaml`, `configs/step1/step1_sft_example.yaml`, `configs/peerj_review/step1_sft_local_artifact.yaml` |
 | Step1 top-k scoring / Step2 data construction | Attaches top-k marker candidates to KorNLI and AI Malpyeong examples. | `scripts/step1/score_topk_markers.py`, `scripts/step2/build_final_step2_data.py` |
 | KorNLI / AI Malpyeong preparation | Converts external raw datasets into common Step2 JSONL splits. | `scripts/step2/prepare_step2_data.py` |
 | Step2 dataset loading | Builds NLI/LOGIC minibatches and no-marker, with-marker, and wrong-marker views. | `src/kodimarc/step2/dataset.py`, `src/kodimarc/step2/loader.py`, `src/kodimarc/step2/prompt.py` |
@@ -117,7 +117,7 @@ Important documentation:
 | Step2 training | Trains and checkpoints the multi-task classifier. | `scripts/step2/train_step2.py`, `src/kodimarc/step2/trainer.py`, `src/kodimarc/step2/checkpointing.py` |
 | Evaluation under NO / WITH / WRONG | Evaluates saved checkpoints under no-marker, predicted-marker, and wrong-marker modes. | `scripts/step2/evaluate_step2.py`, `src/kodimarc/step2/evaluate.py`, `src/kodimarc/step2/eval_utils.py` |
 | Metrics calculation | Computes accuracy, macro precision, macro recall, macro F1, confusion matrices, transition summaries, and marker-category reports. | `src/kodimarc/step2/metrics.py`, `src/kodimarc/step2/eval_utils.py` |
-| YAML configs | Stores public examples and copied manuscript-facing local artifact configs. | `configs/step1/`, `configs/step2/`, `configs/peerj_review/` |
+| YAML configs | Stores public examples, copied manuscript-facing local artifact configs, and the manuscript-reconstructed Step1 Kanana config. | `configs/step1/`, `configs/step2/`, `configs/peerj_review/` |
 | Sample JSONL schemas | Shows expected Step1 and Step2 row formats. | `data/sample/step1_sample.jsonl`, `data/sample/step2_sample.jsonl` |
 
 ## Requirements
@@ -134,15 +134,22 @@ torch
 transformers
 peft
 bitsandbytes
+accelerate
+datasets
 PyYAML
 tqdm
 ujson
 kss
 sentencepiece
+tokenizers
+numpy
+pandas
+scikit-learn
+scipy
 unsloth
 ```
 
-Full Step1/Step2 training uses large language models and requires a CUDA-capable GPU environment. The manuscript-facing configs use bf16 mixed precision, 8-bit quantization, and LoRA for the Kanana 8B backbone.
+`requirements.txt` contains the repository dependencies used by the public scripts and modules. Full Step1/Step2 training uses large language models and requires a CUDA-capable GPU environment. The manuscript-facing configs use 8-bit quantization and LoRA for Step1, and bf16 mixed precision, 8-bit quantization, and LoRA for the Kanana 8B Step2 backbone.
 
 ## Manuscript Experiment Environment
 The following environment values were verified from the local machine and searched experiment artifacts described in `docs/MANUSCRIPT_RUN_MANIFEST.md`.
@@ -156,12 +163,13 @@ The following environment values were verified from the local machine and search
 | System memory | 188 GiB RAM |
 | Python | `3.12.4` in the released validation environment; searched local run artifacts did not store a separate interpreter version |
 | CUDA runtime version | Not stored in the released logs; NVIDIA driver `535.183.01` was used |
+| Step1 manuscript generator | `kakaocorp/kanana-1.5-8b-instruct-2505`, documented in `configs/peerj_review/step1_kanana_8b_instruct_2505_manuscript.yaml` |
 | Step2 backbone | `kakaocorp/kanana-1.5-8b-instruct-2505` in the manuscript-facing Kanana configs |
 | Precision / quantization | `bf16` mixed precision and `8bit` quantization in verified Step2 configs |
 | LoRA | rank `64`, alpha `128`, dropout `0.0` in verified Kanana Step2 configs |
-| Main seeds found | Step1 SFT local artifact: `42`; Step2 full result run: `42`; Step2 marker-sensitive run: `43`; no-MREL and no-SupCon ablations: `42` |
+| Main seeds found | Step1 manuscript config: `42`; auxiliary EXAONE Step1 local artifact: `42`; Step2 full result run: `42`; Step2 marker-sensitive run: `43`; no-MREL and no-SupCon ablations: `42` |
 
-The searched experiment folders did not contain a `pip freeze`, conda environment export, or equivalent package-lock file. The public dependency list is therefore provided by `requirements.txt`, and the copied configs preserve the model, precision, quantization, LoRA, training, and seed settings available in the saved artifacts.
+The searched experiment folders did not contain a `pip freeze`, conda environment export, or equivalent package-lock file. The public dependency list is therefore provided by `requirements.txt`, and the copied configs preserve the model, precision, quantization, LoRA, training, and seed settings available in the saved artifacts. All files under `configs/peerj_review/*.yaml` are valid YAML and can be parsed with PyYAML.
 
 ## Methodology
 KoDiMARC contains two connected stages.
@@ -212,10 +220,10 @@ python scripts/step1/build_sft_data.py \
 ### 4. Train the Step1 generator
 ```bash
 python scripts/step1/train_step1_generator.py \
-  --config configs/step1/step1_sft_example.yaml
+  --config configs/peerj_review/step1_kanana_8b_instruct_2505_manuscript.yaml
 ```
 
-The local Step1 artifact config found in the searched experiment folders is preserved as `configs/peerj_review/step1_sft_local_artifact.yaml`.
+The manuscript Step1 generator config is `configs/peerj_review/step1_kanana_8b_instruct_2505_manuscript.yaml`. The exact original Kanana Step1 YAML was not found in the searched local artifacts, so this file is reconstructed from manuscript PDF Table 10 and verified local scripts/artifacts. The EXAONE file `configs/peerj_review/step1_sft_local_artifact.yaml` is retained as an auxiliary smaller Step1 local artifact, not as the manuscript Step1 generator used for final Step2 results.
 
 ### 5. Build Step2 JSONL files with Step1 top-k markers
 ```bash
@@ -250,7 +258,7 @@ python scripts/step2/train_step2.py \
   --config configs/peerj_review/step2_marker_sensitive_run_20260406_seed43.yaml
 ```
 
-The copied `configs/peerj_review/*.yaml` files preserve saved local run settings. Their paths and source artifacts are documented in `docs/MANUSCRIPT_RUN_MANIFEST.md`.
+The copied `configs/peerj_review/*.yaml` files preserve saved local run settings or manuscript-reconstructed settings. They are valid YAML parseable with PyYAML, and their paths and source artifacts are documented in `docs/MANUSCRIPT_RUN_MANIFEST.md`.
 
 ### 7. Evaluate Step2 under NO / WITH / WRONG modes
 ```bash
@@ -288,13 +296,23 @@ The smoke test validates the JSONL schema and executable data-conversion path us
 ## Reproducing the Reported Tables
 The searched local experiment folders contain saved configs, summaries, metrics, and diagnostic reports for the manuscript-facing runs. The compact index is in `docs/results/README.md`; the detailed artifact manifest is in `docs/MANUSCRIPT_RUN_MANIFEST.md`.
 
+The numerical summaries in this repository follow the manuscript tables. Some local result files may store additional decimal places or intermediate diagnostic outputs; the manuscript-facing tables are rounded as reported in the PDF.
+
+| Manuscript table | Headline values |
+| --- | --- |
+| Table 5 Step1 generator | Kanana-1.5-8B-instruct-2505: marker accuracy `0.480`, label accuracy `0.772`, marker F1 `0.147`, label F1 `0.502`. |
+| Table 6 KoDiMARC WITH | AI-M Acc `0.874`, AI-M Macro-F1 `0.674`, KorNLI Acc `0.873`, KorNLI Macro-F1 `0.873`. |
+| Table 7 full KoDiMARC | KorNLI Acc `0.8730`, KorNLI F1 `0.8730`, AI-M Acc `0.8736`, AI-M F1 `0.6743`. |
+| Table 8 WRONG diagnostic | AI-M Acc `0.862`, AI-M Macro-F1 `0.647`, KorNLI Acc `0.861`, KorNLI Macro-F1 `0.861`. |
+| Table 9 marker distribution | AI Malpyeong Forward `N=125`, Compatible `N=12`, Contrastive `N=132`; KorNLI Contradiction `N=1652`, Entailment `N=1651`, Neutral `N=1651`. |
+
 | Manuscript table type | Reproduction artifact or command |
 | --- | --- |
-| Step1 marker prediction table | `docs/results/README.md` indexes `/home/jihong/Multi-Task_NLI/outputs/marker_only_top1_logic/20260525_170242/summary.csv`. |
-| Main end-to-end AI Malpyeong and KorNLI table | Run Step2 training/evaluation with `configs/peerj_review/step2_marker_sensitive_run_20260406_seed43.yaml` or inspect the saved metrics indexed in `docs/results/README.md`. |
-| Ablation table | `configs/peerj_review/step2_ablation_no_mrel_run_20260413.yaml`, `configs/peerj_review/step2_ablation_no_supcon_run_20260413.yaml`, and the no-dropout/no-corruption/no-KL summaries listed in `docs/MANUSCRIPT_RUN_MANIFEST.md`. |
-| NO / WITH / WRONG diagnostic table | Inspect `metrics.json`, `test/metrics.json`, transition summaries, and marker-category reports for the saved run directories listed in `docs/results/README.md`. |
-| Marker distribution table | Inspect `/data1/jihong/multi-task_NLI3/outputs/marker_distribution/label_marker_counts_summary.json`, summarized in `docs/results/README.md`. |
+| Step1 marker prediction table | Inspect manuscript Table 5 values in `docs/results/README.md` and the manuscript Step1 config `configs/peerj_review/step1_kanana_8b_instruct_2505_manuscript.yaml`. |
+| Main end-to-end AI Malpyeong and KorNLI table | Inspect manuscript Table 6 values in `docs/results/README.md`; run Step2 training/evaluation with `configs/peerj_review/step2_marker_sensitive_run_20260406_seed43.yaml` for the corresponding local code path. |
+| Ablation table | Inspect manuscript Table 7 values in `docs/results/README.md`; copied ablation configs are `configs/peerj_review/step2_ablation_no_mrel_run_20260413.yaml` and `configs/peerj_review/step2_ablation_no_supcon_run_20260413.yaml`. |
+| NO / WITH / WRONG diagnostic table | Inspect manuscript Table 8 values in `docs/results/README.md`; local diagnostic files are listed in `docs/MANUSCRIPT_RUN_MANIFEST.md`. |
+| Marker distribution table | Inspect manuscript Table 9 values in `docs/results/README.md`; the local marker-distribution artifact is listed in `docs/MANUSCRIPT_RUN_MANIFEST.md`. |
 
 The copied configs and documented result paths provide the bridge between public scripts and the local manuscript artifacts without redistributing raw datasets or large checkpoints.
 
