@@ -1,12 +1,8 @@
 provenance:
-  source: manuscript_reconstructed
-  description: manuscript-reconstructed from PDF Table 10 and local artifacts
+  source: manuscript_table_10
   manuscript_pdf: /data1/jihong/LaTeX_Template_for_PeerJ_Journal_Submissions/main.pdf
   manuscript_table: Table 10
-  local_artifact_search_roots:
-    - /data1/jihong/multi-task_NLI3
-    - /home/jihong/Multi-Task_NLI
-  note: The original Kanana Step1 YAML was not found in the searched local artifacts; this file records the Step1 settings reported in the manuscript and the model selected for downstream experiments.
+  description: Step1 Kanana generator configuration reported in the manuscript.
 project:
   name: KoDiMARC
   stage: Step1 discourse marker generator

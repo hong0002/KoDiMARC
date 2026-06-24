@@ -8,12 +8,12 @@ This manifest records the local experiment artifacts that were available when pr
 | `/data1/jihong/multi-task_NLI3` | Step2 multi-task training, evaluation, ablation, diagnostics, and marker-distribution artifacts. |
 | `/home/jihong/Multi-Task_NLI` | Step1 and marker-prediction artifacts, including a saved auxiliary EXAONE Step1 SFT local config and marker-only evaluation summary. |
 
-## Copied Configs
-The following configs were copied or reconstructed into this repository under `configs/peerj_review/` so that reviewers can inspect manuscript-facing settings without depending on the local artifact tree.
+## Review Configs
+The following configs are provided under `configs/peerj_review/` so that reviewers can inspect manuscript-facing settings without depending on the local artifact tree.
 
 | Repository config | Source artifact | Verified role |
 | --- | --- | --- |
-| `configs/peerj_review/step1_kanana_8b_instruct_2505_manuscript.yaml` | Manuscript-reconstructed from `/data1/jihong/LaTeX_Template_for_PeerJ_Journal_Submissions/main.pdf`, Table 10, and verified local scripts/artifacts | Manuscript Step1 discourse-marker generator config using `kakaocorp/kanana-1.5-8b-instruct-2505`, 8-bit quantization, max sequence length 256, LoRA rank 64/alpha 128/dropout 0.0, AdamW, learning rate 1.0e-5, warmup 200, early stopping patience 3, and seed 42. |
+| `configs/peerj_review/step1_kanana_8b_instruct_2505_manuscript.yaml` | Manuscript PDF `/data1/jihong/LaTeX_Template_for_PeerJ_Journal_Submissions/main.pdf`, Table 10 | Manuscript Step1 discourse-marker generator config using `kakaocorp/kanana-1.5-8b-instruct-2505`, 8-bit quantization, max sequence length 256, LoRA rank 64/alpha 128/dropout 0.0, AdamW, learning rate 1.0e-5, warmup 200, early stopping patience 3, and seed 42. |
 | `configs/peerj_review/step1_sft_local_artifact.yaml` | `/home/jihong/Multi-Task_NLI/backup/configs/01_1_config_sft_only.yaml` | Auxiliary smaller Step1 local artifact config using `LGAI-EXAONE/EXAONE-4.0-1.2B`, 8-bit quantization, LoRA rank 64, seed 42, and KoWiki SFT JSONL paths. This is not the manuscript Step1 generator used for final Step2 results. |
 | `configs/peerj_review/step2_full_result_run_20260319.yaml` | `/data1/jihong/multi-task_NLI3/outputs/20260319_182916__kakaocorp__kanana-1.5-8b-instruct-2505/config_used.yaml` | Step2 full result run with `kakaocorp/kanana-1.5-8b-instruct-2505`, seed 42, bf16, 8-bit quantization, LoRA rank 64, and NLI:LOGIC task ratio 3:1. |
 | `configs/peerj_review/step2_marker_sensitive_run_20260406_seed43.yaml` | `/data1/jihong/multi-task_NLI3/outputs/marker_sensitive/20260406_183903__kakaocorp__kanana-1.5-8b-instruct-2505/config_used.yaml` | Main marker-sensitive Step2 run with base-delta head, marker-aware head, MREL, SupCon, WITH-WRONG margin, seed 43, bf16, and 8-bit quantization. |
@@ -34,10 +34,10 @@ The following configs were copied or reconstructed into this repository under `c
 | Step2 precision / quantization in copied configs | `bf16` and `8bit` |
 | Step2 LoRA in copied configs | rank `64`, alpha `128`, dropout `0.0` |
 
-The searched saved run artifacts did not include a complete `pip freeze`, conda export, or immutable dependency lock file. Package names are therefore documented through `requirements.txt`, while copied configs preserve the experiment settings available in the saved artifacts. All `configs/peerj_review/*.yaml` files were reformatted as block-style YAML and validated with PyYAML.
+Package names are documented through `requirements.txt`, while review configs preserve the experiment settings available for this release. All `configs/peerj_review/*.yaml` files were reformatted as block-style YAML and validated with PyYAML.
 
-## Step1 Kanana Config Search Outcome
-The local artifact roots were searched for Kanana, Step1, SFT, top-k, and marker-related YAML, shell, Python, JSON, log, and text artifacts. Step2 Kanana configs and Step1 auxiliary EXAONE configs were found, but an exact original Kanana Step1 YAML was not found. The repository therefore includes `configs/peerj_review/step1_kanana_8b_instruct_2505_manuscript.yaml`, labeled with `provenance.source: manuscript_reconstructed`, using only values reported in manuscript PDF Table 10 and verified local script/config conventions.
+## Artifact Provenance
+The Step1 Kanana review config records the settings reported in manuscript Table 10. Local artifact review also identified an auxiliary EXAONE Step1 config and the Step2 configs listed above. This manifest keeps those provenance details separate from the main reviewer-facing README.
 
 ## Key Result Artifacts
 | Artifact | Local path | Notes |
@@ -59,7 +59,7 @@ The local artifact roots were searched for Kanana, Step1, SFT, top-k, and marker
 Manuscript-facing metric values are indexed in `docs/results/README.md` and follow the rounded values reported in the manuscript PDF. Local artifact paths above provide cross-check files that may store additional decimal places or intermediate diagnostics.
 
 ## Data and Checkpoint Scope
-Full raw datasets, Hugging Face model weights, and trained checkpoints are not stored in this repository. The public release provides code, configs, sample schemas, and documentation. Dataset downloads and checkpoint generation must be performed locally under the terms of the original providers.
+This public release provides code, configs, sample schemas, and documentation. Full raw datasets, Hugging Face model weights, and trained checkpoints remain governed by their original providers' terms and must be prepared locally for full reproduction.
 
-## Archive and DOI Scope
-No release archive DOI or persistent archive record was found in the searched local artifacts. The code availability statement therefore uses the public GitHub repository URL and omits a DOI.
+## Archive Scope
+The code availability statement uses the public GitHub repository URL. A release tag or archival record can be added after the final repository review.

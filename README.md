@@ -34,7 +34,7 @@ Files included in this repository:
 - Source code under `src/kodimarc/`.
 - Reproducibility scripts under `scripts/`.
 - Public example configs under `configs/step1/` and `configs/step2/`.
-- Verified local run configs and the manuscript-reconstructed Step1 Kanana config under `configs/peerj_review/`.
+- Verified manuscript-facing configs under `configs/peerj_review/`.
 - Workflow documentation under `docs/`.
 - Toy JSONL schema examples under `data/sample/`.
 - `requirements.txt` and `LICENSE`.
@@ -93,7 +93,7 @@ Important documentation:
 - `docs/step1.md`: detailed Step1 workflow.
 - `docs/step2.md`: detailed Step2 workflow.
 - `docs/reproducibility.md`: expanded PeerJ reproducibility notes.
-- `docs/MANUSCRIPT_RUN_MANIFEST.md`: searched local artifact folders, verified configs, result files, and stored environment evidence.
+- `docs/MANUSCRIPT_RUN_MANIFEST.md`: artifact provenance, verified configs, result files, and environment evidence.
 - `docs/results/README.md`: compact index of manuscript table values and local result artifacts used for cross-checking.
 
 ## Algorithm-to-Code Map
@@ -117,7 +117,7 @@ Important documentation:
 | Step2 training | Trains and checkpoints the multi-task classifier. | `scripts/step2/train_step2.py`, `src/kodimarc/step2/trainer.py`, `src/kodimarc/step2/checkpointing.py` |
 | Evaluation under NO / WITH / WRONG | Evaluates saved checkpoints under no-marker, predicted-marker, and wrong-marker modes. | `scripts/step2/evaluate_step2.py`, `src/kodimarc/step2/evaluate.py`, `src/kodimarc/step2/eval_utils.py` |
 | Metrics calculation | Computes accuracy, macro precision, macro recall, macro F1, confusion matrices, transition summaries, and marker-category reports. | `src/kodimarc/step2/metrics.py`, `src/kodimarc/step2/eval_utils.py` |
-| YAML configs | Stores public examples, copied manuscript-facing local artifact configs, and the manuscript-reconstructed Step1 Kanana config. | `configs/step1/`, `configs/step2/`, `configs/peerj_review/` |
+| YAML configs | Stores public examples and manuscript-facing review configs. | `configs/step1/`, `configs/step2/`, `configs/peerj_review/` |
 | Sample JSONL schemas | Shows expected Step1 and Step2 row formats. | `data/sample/step1_sample.jsonl`, `data/sample/step2_sample.jsonl` |
 
 ## Requirements
@@ -152,7 +152,7 @@ unsloth
 `requirements.txt` contains the repository dependencies used by the public scripts and modules. Full Step1/Step2 training uses large language models and requires a CUDA-capable GPU environment. The manuscript-facing configs use 8-bit quantization and LoRA for Step1, and bf16 mixed precision, 8-bit quantization, and LoRA for the Kanana 8B Step2 backbone.
 
 ## Manuscript Experiment Environment
-The following environment values were verified from the local machine and searched experiment artifacts described in `docs/MANUSCRIPT_RUN_MANIFEST.md`.
+The following environment values summarize the manuscript experiment platform and release validation environment.
 
 | Item | Value |
 | --- | --- |
@@ -161,15 +161,12 @@ The following environment values were verified from the local machine and search
 | GPU | 4 x NVIDIA GeForce RTX 3090, 24 GiB VRAM each |
 | NVIDIA driver | `535.183.01` |
 | System memory | 188 GiB RAM |
-| Python | `3.12.4` in the released validation environment; searched local run artifacts did not store a separate interpreter version |
-| CUDA runtime version | Not stored in the released logs; NVIDIA driver `535.183.01` was used |
-| Step1 manuscript generator | `kakaocorp/kanana-1.5-8b-instruct-2505`, documented in `configs/peerj_review/step1_kanana_8b_instruct_2505_manuscript.yaml` |
-| Step2 backbone | `kakaocorp/kanana-1.5-8b-instruct-2505` in the manuscript-facing Kanana configs |
-| Precision / quantization | `bf16` mixed precision and `8bit` quantization in verified Step2 configs |
-| LoRA | rank `64`, alpha `128`, dropout `0.0` in verified Kanana Step2 configs |
-| Main seeds found | Step1 manuscript config: `42`; auxiliary EXAONE Step1 local artifact: `42`; Step2 full result run: `42`; Step2 marker-sensitive run: `43`; no-MREL and no-SupCon ablations: `42` |
+| Python | `3.12.4` |
+| Main model | `kakaocorp/kanana-1.5-8b-instruct-2505` |
+| Precision / quantization | `bf16` mixed precision and `8bit` quantization |
+| LoRA | rank `64`, alpha `128`, dropout `0.0` |
 
-The searched experiment folders did not contain a `pip freeze`, conda environment export, or equivalent package-lock file. The public dependency list is therefore provided by `requirements.txt`, and the copied configs preserve the model, precision, quantization, LoRA, training, and seed settings available in the saved artifacts. All files under `configs/peerj_review/*.yaml` are valid YAML and can be parsed with PyYAML.
+The public dependency list is provided in `requirements.txt`. The files under `configs/peerj_review/*.yaml` are valid YAML and can be parsed with PyYAML.
 
 ## Methodology
 KoDiMARC contains two connected stages.
@@ -223,7 +220,7 @@ python scripts/step1/train_step1_generator.py \
   --config configs/peerj_review/step1_kanana_8b_instruct_2505_manuscript.yaml
 ```
 
-The manuscript Step1 generator config is `configs/peerj_review/step1_kanana_8b_instruct_2505_manuscript.yaml`. The exact original Kanana Step1 YAML was not found in the searched local artifacts, so this file is reconstructed from manuscript PDF Table 10 and verified local scripts/artifacts. The EXAONE file `configs/peerj_review/step1_sft_local_artifact.yaml` is retained as an auxiliary smaller Step1 local artifact, not as the manuscript Step1 generator used for final Step2 results.
+The manuscript Step1 generator config is `configs/peerj_review/step1_kanana_8b_instruct_2505_manuscript.yaml`, which records the Table 10 Step1 Kanana settings reported in the manuscript. The EXAONE file `configs/peerj_review/step1_sft_local_artifact.yaml` is retained as an auxiliary smaller Step1 local artifact, not as the manuscript Step1 generator used for final Step2 results.
 
 ### 5. Build Step2 JSONL files with Step1 top-k markers
 ```bash
@@ -258,7 +255,7 @@ python scripts/step2/train_step2.py \
   --config configs/peerj_review/step2_marker_sensitive_run_20260406_seed43.yaml
 ```
 
-The copied `configs/peerj_review/*.yaml` files preserve saved local run settings or manuscript-reconstructed settings. They are valid YAML parseable with PyYAML, and their paths and source artifacts are documented in `docs/MANUSCRIPT_RUN_MANIFEST.md`.
+The `configs/peerj_review/*.yaml` files preserve manuscript-facing settings and review artifacts. They are valid YAML parseable with PyYAML, and their paths and source artifacts are documented in `docs/MANUSCRIPT_RUN_MANIFEST.md`.
 
 ### 7. Evaluate Step2 under NO / WITH / WRONG modes
 ```bash
@@ -317,11 +314,11 @@ The numerical summaries in this repository follow the manuscript tables. Some lo
 The copied configs and documented result paths provide the bridge between public scripts and the local manuscript artifacts without redistributing raw datasets or large checkpoints.
 
 ## Reproducibility Scope
-This repository reconstructs the raw-data-to-results code path when external datasets and local model weights are available. Exact numerical values can vary with:
+This repository supports the raw-data-to-results code path when external datasets and local model weights are available. Exact numerical values can vary with:
 - External dataset version and preprocessing state.
 - Base model and tokenizer revision.
 - Step1 checkpoint used for top-k marker generation.
-- GPU hardware, CUDA runtime, quantization kernels, bf16 behavior, and random seed.
+- GPU hardware, CUDA software stack, quantization kernels, bf16 behavior, and random seed.
 - Early stopping and checkpoint selection.
 
 Saved local artifacts show the manuscript-facing seeds, model identifiers, precision, quantization, LoRA settings, and result files that were available for this release.

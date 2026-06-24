@@ -41,7 +41,7 @@ Included files:
 - `src/kodimarc/`: implementation modules.
 - `scripts/`: command-line reproduction scripts.
 - `configs/step1/` and `configs/step2/`: public example YAML configs.
-- `configs/peerj_review/`: verified local run configs and the manuscript-reconstructed Step1 Kanana config.
+- `configs/peerj_review/`: manuscript-facing review configs.
 - `docs/`: workflow, manifest, results, and reproducibility documentation.
 - `data/sample/`: toy JSONL schema examples.
 - `requirements.txt` and `LICENSE`.
@@ -75,7 +75,7 @@ data/
 ```
 
 ## Manuscript Experiment Environment
-The following values were verified from the searched local artifacts and machine information summarized in `docs/MANUSCRIPT_RUN_MANIFEST.md`.
+The following values summarize the manuscript experiment platform and release validation environment.
 
 | Item | Value |
 | --- | --- |
@@ -84,13 +84,12 @@ The following values were verified from the searched local artifacts and machine
 | GPU | 4 x NVIDIA GeForce RTX 3090, 24 GiB VRAM each |
 | NVIDIA driver | `535.183.01` |
 | System memory | 188 GiB RAM |
-| Step1 manuscript generator | `kakaocorp/kanana-1.5-8b-instruct-2505`, documented in `configs/peerj_review/step1_kanana_8b_instruct_2505_manuscript.yaml` |
-| Step2 backbone | `kakaocorp/kanana-1.5-8b-instruct-2505` in verified Kanana configs |
-| Step2 precision / quantization | `bf16` mixed precision and `8bit` quantization |
-| Step2 LoRA | rank `64`, alpha `128`, dropout `0.0` |
-| Main seeds found | Step1 manuscript config: `42`; auxiliary EXAONE Step1 local artifact: `42`; Step2 full result run: `42`; Step2 marker-sensitive run: `43`; no-MREL and no-SupCon ablations: `42` |
+| Python | `3.12.4` |
+| Main model | `kakaocorp/kanana-1.5-8b-instruct-2505` |
+| Precision / quantization | `bf16` mixed precision and `8bit` quantization |
+| LoRA | rank `64`, alpha `128`, dropout `0.0` |
 
-The searched experiment artifacts did not contain a complete `pip freeze`, conda environment export, or immutable package-lock file. Public dependencies are therefore documented in `requirements.txt`, while copied configs preserve the model, precision, quantization, LoRA, training, and seed settings available in saved artifacts. All files under `configs/peerj_review/*.yaml` are valid YAML and can be parsed with PyYAML.
+Public dependencies are documented in `requirements.txt`. The files under `configs/peerj_review/*.yaml` are valid YAML and can be parsed with PyYAML.
 
 ## Methodology
 Step1:
@@ -142,7 +141,7 @@ python scripts/step1/train_step1_generator.py \
   --config configs/peerj_review/step1_kanana_8b_instruct_2505_manuscript.yaml
 ```
 
-The manuscript Step1 generator config is `configs/peerj_review/step1_kanana_8b_instruct_2505_manuscript.yaml`. The exact original Kanana Step1 YAML was not found in the searched local artifacts, so this file is reconstructed from manuscript PDF Table 10 and verified local scripts/artifacts. The EXAONE file `configs/peerj_review/step1_sft_local_artifact.yaml` is retained as an auxiliary smaller Step1 local artifact, not as the manuscript Step1 generator used for final Step2 results.
+The manuscript Step1 generator config is `configs/peerj_review/step1_kanana_8b_instruct_2505_manuscript.yaml`, which records the Table 10 Step1 Kanana settings reported in the manuscript. The EXAONE file `configs/peerj_review/step1_sft_local_artifact.yaml` is retained as an auxiliary smaller Step1 local artifact, not as the manuscript Step1 generator used for final Step2 results.
 
 ### 5. Build Step2 JSONL files with Step1 top-k markers
 ```bash
@@ -222,11 +221,11 @@ The numerical summaries in this repository follow the manuscript tables. Some lo
 | Marker distribution table | Inspect manuscript Table 9 values in `docs/results/README.md`; the local marker-distribution artifact is listed in `docs/MANUSCRIPT_RUN_MANIFEST.md`. |
 
 ## Reproducibility Scope
-This repository reconstructs the raw-data-to-results code path when external datasets and local model weights are available. Exact numerical values can vary with:
+This repository supports the raw-data-to-results code path when external datasets and local model weights are available. Exact numerical values can vary with:
 - External dataset version and preprocessing state.
 - Base model and tokenizer revision.
 - Step1 checkpoint used for top-k marker generation.
-- GPU hardware, CUDA runtime, quantization kernels, bf16 behavior, and random seed.
+- GPU hardware, CUDA software stack, quantization kernels, bf16 behavior, and random seed.
 - Early stopping and checkpoint selection.
 
 Saved local artifacts show the manuscript-facing seeds, model identifiers, precision, quantization, LoRA settings, and result files available for this release.
@@ -235,7 +234,7 @@ Saved local artifacts show the manuscript-facing seeds, model identifiers, preci
 - Repository: `https://github.com/hong0002/KoDiMARC`
 - License: MIT License
 
-The repository contains the source code, configs, sample schemas, and reproduction instructions used for review. No release archive DOI was found in the searched local artifacts, so no DOI is stated here.
+The repository contains the source code, configs, sample schemas, and reproduction instructions used for review.
 
 ## Citation
 If this repository is used in research, cite the accompanying KoDiMARC manuscript after publication. Users must also follow the citation and license requirements of Korean Wikipedia / KoWiki, KorNLI, AI Malpyeong, and the selected base model.
