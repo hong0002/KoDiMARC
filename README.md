@@ -1,7 +1,7 @@
 # KoDiMARC
 
 ## Title
-KoDiMARC: Korean Discourse Marker-aware Relation Classifier
+KoDiMARC: Two-view multi-task learning with discourse markers for robust Korean sentence relation classification
 
 ## Description
 KoDiMARC is a two-stage framework for Korean sentence-pair relation classification. The repository accompanies a manuscript submission and is intended as a reproducibility release for the algorithms and source code used in the study.
@@ -16,7 +16,24 @@ This repository provides:
 
 This repository does not provide the full raw datasets or trained checkpoints because of licensing, redistribution, and storage constraints.
 
-## Dataset Information
+## PeerJ Computer Science AI Application Reproducibility Checklist
+This repository is organized to address the PeerJ Computer Science AI Application reproducibility requirements explicitly.
+
+| No. | PeerJ item | How this repository addresses it |
+| --- | --- | --- |
+| 1 | Algorithms and code used to implement them | The two-stage KoDiMARC algorithm is summarized in `Methodology`, and each algorithmic component is mapped to implementation files in `Algorithm-to-Code Map`. |
+| 2 | README file | This `README.md` is the primary reviewer-facing entry point and links to expanded documentation in `docs/step1.md`, `docs/step2.md`, and `docs/reproducibility.md`. |
+| 3 | Title | The project title is stated in the `Title` section above. |
+| 4 | Description | The `Description` section summarizes the framework, scope, and public reproducibility release. |
+| 5 | Dataset Information | `Data Availability and External Data Access` explains included sample files, external datasets, expected paths, and redistribution limits. |
+| 6 | Code Information | `Code Information` and `Algorithm-to-Code Map` identify the concrete source files, scripts, configs, and sample schemas. |
+| 7 | Usage Instructions | `Full Reproduction Workflow` provides ordered commands for data preparation, Step1, Step2, and evaluation. |
+| 8 | Requirements | `Requirements` lists Python dependencies and the reference environment used for lightweight validation. |
+| 9 | Methodology | `Methodology` describes Step1 discourse marker generation and Step2 marker-aware multi-task classification. |
+| 10 | Citations | `Citations` states how to cite the manuscript and external resources. |
+| 11 | License & Contribution Guidelines | `License & Contribution Guidelines` states the MIT license, external resource exclusions, and contribution expectations. |
+
+## Data Availability and External Data Access
 The full experiments require local access to the following external resources:
 - Korean Wikipedia / KoWiki extracted text for weakly supervised discourse marker data construction.
 - KorNLI data for Korean NLI labels: `entailment`, `neutral`, and `contradiction`.
@@ -35,11 +52,21 @@ The raw datasets and pretrained model weights are external to this repository. T
 
 For a submitted reproduction package, record the exact external dataset versions, download dates, and access URLs in the manuscript data availability statement or in a release note accompanying this repository.
 
-The repository includes only toy examples under `data/sample/`:
+Files included in this repository:
+- Source code under `src/kodimarc/`.
+- Reproducibility scripts under `scripts/`.
+- Example YAML configs under `configs/`.
+- Workflow documentation under `docs/`.
+- License and dependency files: `LICENSE` and `requirements.txt`.
+- Toy schema examples under `data/sample/`.
+
+The repository includes only toy JSONL examples under `data/sample/`:
 - `data/sample/step1_sample.jsonl`: example Step1 weak-supervision rows with sentence pairs, detected markers, marker-removed hypotheses, and marker categories.
 - `data/sample/step2_sample.jsonl`: example Step2 rows with premise/hypothesis text, task labels, and Step1 top-k marker predictions.
 
 The sample files are for schema inspection only. They are not sufficient to reproduce the manuscript results.
+
+The full raw datasets and trained checkpoints are not redistributed because the raw resources are governed by their own access terms, licenses, and storage constraints. Users must obtain the external datasets and model weights from the original providers and train or supply local checkpoints.
 
 Recommended local data layout:
 ```text
@@ -88,6 +115,25 @@ Important code paths:
 - `src/kodimarc/step2/`: Step2 dataset loading, model, training loop, objectives, memory bank, metrics, and evaluation utilities.
 - `configs/`: editable YAML configuration files used by the public workflows.
 - `docs/step1.md`, `docs/step2.md`, and `docs/reproducibility.md`: expanded workflow notes.
+
+## Algorithm-to-Code Map
+The table below maps the main algorithms and reproducibility components to the concrete files that implement or configure them.
+
+| Component | Purpose | Concrete paths |
+| --- | --- | --- |
+| Discourse marker lexicon and category mappings | Defines Korean discourse markers, marker categories, relation/category mappings, wrong-category mappings, and label IDs. | `src/kodimarc/common/markers.py` |
+| KoWiki sentence-pair construction | Builds adjacent sentence pairs from extracted KoWiki text. | `scripts/step1/build_sentence_pairs.py` |
+| Rule-based discourse marker detection/removal | Detects explicit discourse markers, assigns coarse categories, and writes marker-removed hypotheses. | `scripts/step1/detect_and_remove_markers.py`, `src/kodimarc/step1/marker_detection.py` |
+| Step1 SFT data construction | Converts weakly supervised marker-labeled pairs into response-only SFT JSONL splits. | `scripts/step1/build_sft_data.py`, `src/kodimarc/step1/dataset.py` |
+| Step1 generator training | Fine-tunes the discourse marker generator using the Step1 config. | `scripts/step1/train_step1_generator.py`, `src/kodimarc/step1/modeling.py`, `configs/step1/step1_sft_example.yaml` |
+| Step1 top-k marker scoring | Loads a trained Step1 model and attaches top-k discourse marker candidates and scores to sentence-pair JSONL files. | `scripts/step1/score_topk_markers.py` |
+| Final Step2 data construction | Prepares KorNLI/AI Malpyeong splits and attaches Step1 top-k marker fields for Step2. | `scripts/step2/prepare_step2_data.py`, `scripts/step2/build_final_step2_data.py` |
+| Step2 multi-task dataset loading | Builds no-marker, predicted-marker, and wrong-marker views for NLI and LOGIC examples. | `src/kodimarc/step2/dataset.py`, `src/kodimarc/step2/loader.py`, `src/kodimarc/step2/prompt.py` |
+| Step2 model, base-delta head, and marker-aware objectives | Implements the marker-aware classifier, base-delta head, MREL head, losses, and memory queue support. | `src/kodimarc/step2/model.py`, `src/kodimarc/step2/losses.py`, `src/kodimarc/step2/memory_bank.py` |
+| Step2 training | Trains the multi-task classifier and writes checkpoints, configs, summaries, and metrics. | `scripts/step2/train_step2.py`, `src/kodimarc/step2/trainer.py`, `src/kodimarc/step2/checkpointing.py` |
+| Step2 evaluation under NO / WITH / WRONG modes | Evaluates saved checkpoints in no-marker, predicted-marker, and wrong-marker modes. | `scripts/step2/evaluate_step2.py`, `src/kodimarc/step2/evaluate.py`, `src/kodimarc/step2/eval_utils.py`, `src/kodimarc/step2/metrics.py` |
+| Config files | Provide editable settings for model names, paths, losses, training, evaluation, and ablations. | `configs/step1/step1_sft_example.yaml`, `configs/step2/step2_full_example.yaml`, `configs/step2/step2_ablation_example.yaml` |
+| Sample JSONL files | Provide minimal schemas for Step1 weak supervision and Step2 marker-aware inputs. | `data/sample/step1_sample.jsonl`, `data/sample/step2_sample.jsonl` |
 
 ## Requirements
 Install dependencies in a Python virtual environment:
@@ -161,8 +207,8 @@ Step2 trains a multi-task Korean sentence-pair classifier:
 
 The classifier supports marker dropout, marker corruption, marker-relation compatibility supervision, supervised contrastive learning, and a WITH-WRONG margin objective. These settings are controlled by the Step2 YAML config files.
 
-## Usage Instructions
-The recommended reproducibility workflow is to run each stage explicitly. Commands below assume that raw datasets have already been placed under `data/raw/` and that paths in the YAML configs have been checked for the local machine.
+## Full Reproduction Workflow
+The recommended usage path is to run each stage explicitly. Commands below assume that raw datasets have already been placed under `data/raw/` and that paths in the YAML configs have been checked for the local machine.
 
 ### 1. Prepare the repository layout
 ```bash
@@ -178,7 +224,10 @@ python scripts/step1/build_sentence_pairs.py \
 python scripts/step1/detect_and_remove_markers.py \
   --input-jsonl data/processed/kowiki/wiki_pairs.jsonl \
   --output-jsonl data/processed/kowiki/wiki_pairs_labeled.jsonl
+```
 
+### 3. Build Step1 SFT data
+```bash
 python scripts/step1/build_sft_data.py \
   --input-jsonl data/processed/kowiki/wiki_pairs_labeled.jsonl \
   --train-output data/processed/kowiki/dp_sft_train.jsonl \
@@ -186,7 +235,7 @@ python scripts/step1/build_sft_data.py \
   --test-output data/processed/kowiki/dp_sft_test.jsonl
 ```
 
-### 3. Train the Step1 generator
+### 4. Train the Step1 generator
 ```bash
 python scripts/step1/train_step1_generator.py \
   --config configs/step1/step1_sft_example.yaml
@@ -194,7 +243,7 @@ python scripts/step1/train_step1_generator.py \
 
 The trained checkpoint is written to the output directory configured in `configs/step1/step1_sft_example.yaml`.
 
-### 4. Build final Step2 JSONL files
+### 5. Build Step2 JSONL files with Step1 top-k markers
 ```bash
 python scripts/step2/build_final_step2_data.py \
   --kornli-dir data/raw/kornli \
@@ -214,7 +263,7 @@ Expected output files:
 - `data/processed/multitask_nli/final/test_logic.jsonl`
 - `data/processed/multitask_nli/final/build_manifest.json`
 
-### 5. Train Step2
+### 6. Train Step2
 ```bash
 python scripts/step2/train_step2.py \
   --config configs/step2/step2_full_example.yaml
@@ -222,7 +271,7 @@ python scripts/step2/train_step2.py \
 
 The default public Step2 example reflects the marker-sensitive setting used for paper-facing runs, with KL consistency disabled by default.
 
-### 6. Evaluate Step2
+### 7. Evaluate Step2
 ```bash
 python scripts/step2/evaluate_step2.py \
   --config /path/to/run_dir/config_used.yaml \
@@ -242,7 +291,7 @@ bash scripts/run_example_pipeline.sh
 
 For first-time reproduction, the explicit commands above and the detailed notes in `docs/step1.md`, `docs/step2.md`, and `docs/reproducibility.md` are recommended.
 
-## Smoke Test
+## Minimal Smoke Test
 The repository includes small sample files that allow a quick no-GPU sanity check of the Step1 data-conversion path. This smoke test verifies that the JSONL schema can be read and converted into response-only SFT examples.
 
 ```bash
@@ -260,7 +309,7 @@ Expected output for the included toy file:
 
 This smoke test is only a format and code-path check. It does not train a model and does not reproduce the manuscript results.
 
-## Reproducibility Notes
+## Reproducibility Limits
 Exact numerical reproduction depends on:
 - The specific versions and preprocessing state of KoWiki, KorNLI, and AI Malpyeong.
 - Local access permissions and licenses for those datasets.
@@ -270,6 +319,15 @@ Exact numerical reproduction depends on:
 
 The public release is designed to reconstruct the raw-data-to-results code path, including Step1 weak-supervision data, Step1 SFT data, final Step2 JSONL files, Step2 checkpoints, and evaluation outputs, when the required external datasets and model weights are available locally.
 
+## Version for PeerJ Review
+The reviewed version should be archived before resubmission. Do not cite an unarchived or dirty working tree as the final review version.
+
+- Repository URL: `https://github.com/hong0002/KoDiMARC`
+- Release tag: TO BE FILLED BY AUTHOR BEFORE RESUBMISSION
+- Commit hash: TO BE FILLED BY AUTHOR BEFORE RESUBMISSION
+- Archive DOI/persistent URL: TO BE FILLED BY AUTHOR BEFORE RESUBMISSION
+- Archive date: TO BE FILLED BY AUTHOR BEFORE RESUBMISSION
+
 ## Code Availability
 The source code is maintained at:
 - Repository: `https://github.com/hong0002/KoDiMARC`
@@ -277,14 +335,9 @@ The source code is maintained at:
 
 For PeerJ review or publication, the reviewed code version should be archived as an immutable release, for example through Zenodo, Figshare, PeerJ supplementary files, or another repository that provides a persistent identifier.
 
-Before submission, record the final archived version here:
-- Archived DOI or persistent URL: to be added after creating the submitted release.
-- Release tag or commit hash: to be added after creating the submitted release.
-- Archive date: to be added after creating the submitted release.
-
 The archived release should correspond to a clean repository state and should include this README, `LICENSE`, `requirements.txt`, `configs/`, `scripts/`, `src/`, `docs/`, and the sample files under `data/sample/`.
 
-## References
+## Citations
 If this repository is used in research, please cite the accompanying KoDiMARC manuscript once citation information is available.
 
 Users should also follow the citation and license requirements of the external resources used in their reproduction:
@@ -295,12 +348,11 @@ Users should also follow the citation and license requirements of the external r
 
 Citation information for the KoDiMARC manuscript will be added after publication.
 
-## License
+## License & Contribution Guidelines
 This repository is released under the MIT License. See `LICENSE` for details.
 
 The external datasets and pretrained model weights are not covered by this repository's MIT License. Users are responsible for complying with the licenses and terms of use of each external resource.
 
-## Contribution Guidelines
 This repository is maintained primarily as a reproducibility release for the accompanying manuscript. Contributions that improve documentation, fix reproducibility bugs, or clarify setup instructions are welcome.
 
 For proposed changes, please include:
