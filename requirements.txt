@@ -11,6 +11,7 @@ pandas
 scikit-learn
 scipy
 tqdm
+tensorboard
 PyYAML
 ujson
 kss

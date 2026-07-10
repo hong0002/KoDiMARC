@@ -52,11 +52,6 @@ marker:
     역접: ["CAUSAL", "COND", "ADD", "EXAMPLE", "EXPLAN"]
     순접: ["CONTRAST", "CONCESS", "CAUSAL"]
     양립: ["CONTRAST", "CONCESS", "CAUSAL", "COND"]
-    인과: ["CONTRAST", "CONCESS", "COND"]
-    양보: ["CAUSAL", "ADD", "EXAMPLE"]
-    조건: ["CAUSAL", "CONTRAST", "CONCESS"]
-    설명: ["CONTRAST", "CONCESS", "COND"]
-    예시: ["CONTRAST", "CONCESS", "CAUSAL"]
 
 prompt:
   style: candidate_marker_hypothesis

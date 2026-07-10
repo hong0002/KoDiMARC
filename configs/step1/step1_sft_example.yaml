@@ -1,9 +1,11 @@
 model:
   base_model: kakaocorp/kanana-1.5-8b-instruct-2505
   dtype: float16
+  device: null
   device_map: auto
   quant_type: 8bit
   max_length: 256
+  num_labels: 7
 
 lora:
   enable: true

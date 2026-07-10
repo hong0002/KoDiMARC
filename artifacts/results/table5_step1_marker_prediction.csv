@@ -1,0 +1,10 @@
+regime,model,marker_accuracy,label_accuracy,marker_macro_precision,label_macro_precision,marker_macro_recall,label_macro_recall,marker_macro_f1,label_macro_f1
+SFT (fine-tuned),Kanana-1.5-8B-base,0.470,0.782,0.163,0.520,0.148,0.474,0.133,0.472
+SFT (fine-tuned),Kanana-1.5-8B-instruct-2505,0.480,0.772,0.165,0.515,0.165,0.525,0.147,0.502
+SFT (fine-tuned),Kanana-1.5-2.1B-base,0.124,0.464,0.062,0.367,0.052,0.395,0.037,0.316
+SFT (fine-tuned),Kanana-1.5-2.1B-instruct-2505,0.398,0.702,0.107,0.502,0.112,0.580,0.097,0.477
+SFT (fine-tuned),EXAONE-4.0-1.2B,0.228,0.440,0.119,0.379,0.065,0.245,0.058,0.229
+LLM (zero-shot),GPT-5.2,0.288,0.528,0.129,0.338,0.115,0.426,0.090,0.317
+LLM (zero-shot),Claude-sonnet-4.5,0.310,0.665,0.201,0.430,0.124,0.437,0.113,0.371
+LLM (few-shot),GPT-5.2,0.360,0.559,0.135,0.344,0.130,0.441,0.114,0.342
+LLM (few-shot),Claude-sonnet-4.5,0.404,0.674,0.176,0.419,0.171,0.551,0.148,0.430

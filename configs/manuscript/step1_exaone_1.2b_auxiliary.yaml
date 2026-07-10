@@ -1,3 +1,6 @@
+provenance:
+  role: Auxiliary Step1 configuration for the EXAONE-4.0-1.2B comparison.
+
 model:
   base_model: LGAI-EXAONE/EXAONE-4.0-1.2B
   dtype: float16
@@ -15,12 +18,12 @@ lora:
   alpha: 128
   dropout: 0.0
 data:
-  train_path: datasets/processed/ko_wiki/dp_sft_train.jsonl
-  valid_path: datasets/processed/ko_wiki/dp_sft_valid.jsonl
+  train_path: data/processed/kowiki/dp_sft_train.jsonl
+  valid_path: data/processed/kowiki/dp_sft_valid.jsonl
   max_length: 256
   max_samples: null
 training:
-  output_dir: outputs/담화표지sft_v2/sft_only
+  output_dir: outputs/step1_exaone_1.2b_auxiliary
   num_epochs: 1
   batch_size: 1
   gradient_accumulation: 16

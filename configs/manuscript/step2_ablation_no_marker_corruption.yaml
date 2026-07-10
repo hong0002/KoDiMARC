@@ -1,3 +1,10 @@
+# The ablation switch and reported metrics are supported by saved experiment artifacts.
+# Shared settings follow the full configuration and manuscript Appendix Table A2.
+provenance:
+  source_run_id: 20260316_162026__kakaocorp__kanana-1.5-8b-instruct-2505
+  manuscript_table: Table 7
+  ablation: marker corruption disabled
+
 seed: 42
 device: auto
 
@@ -20,14 +27,7 @@ model:
   lora_r: 64
   lora_alpha: 128
   lora_dropout: 0.0
-  target_modules:
-    - q_proj
-    - k_proj
-    - v_proj
-    - o_proj
-    - gate_proj
-    - up_proj
-    - down_proj
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
 
 marker:
   source: predicted
@@ -49,9 +49,9 @@ marker:
   corrupt_prob_logic_start: 0.01
   corrupt_prob_logic_end: 0.05
   logic_forbidden_categories:
-    역접: ["CAUSAL", "COND", "ADD", "EXAMPLE", "EXPLAN"]
-    순접: ["CONTRAST", "CONCESS", "CAUSAL"]
-    양립: ["CONTRAST", "CONCESS", "CAUSAL", "COND"]
+    순접: [CONTRAST, CONCESS, CAUSAL]
+    역접: [CAUSAL, COND, ADD, EXAMPLE, EXPLAN]
+    양립: [CONTRAST, CONCESS, CAUSAL, COND]
 
 prompt:
   style: candidate_marker_hypothesis
@@ -108,21 +108,9 @@ selection_weights:
   wrong: 0.0
 
 experiments:
-  - name: marker_sensitive
-    enable_kl: false
-    enable_dropout: true
-    enable_corruption: true
-    enable_mrel: true
-    enable_supcon: true
-  - name: with_kl
+  - name: marker_sensitive_no_corruption
     enable_kl: true
     enable_dropout: true
-    enable_corruption: true
+    enable_corruption: false
     enable_mrel: true
-    enable_supcon: true
-  - name: no_mrel
-    enable_kl: false
-    enable_dropout: true
-    enable_corruption: true
-    enable_mrel: false
     enable_supcon: true

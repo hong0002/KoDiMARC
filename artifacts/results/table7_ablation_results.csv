@@ -1,0 +1,6 @@
+variant,kornli_accuracy,kornli_macro_f1,kornli_delta_f1,ai_malpyeong_accuracy,ai_malpyeong_macro_f1,ai_malpyeong_delta_f1
+Full KoDiMARC (best),0.8730,0.8730,,0.8736,0.6743,
+w/o MREL,0.8613,0.8617,-0.0113,0.8810,0.6816,0.0073
+w/o SupCon,0.8654,0.8654,-0.0077,0.8401,0.6585,-0.0159
+w/o marker corruption,0.8543,0.8532,-0.0198,0.8625,0.6282,-0.0461
+w/o marker dropout,0.8734,0.8735,0.0005,0.8699,0.6524,-0.0219

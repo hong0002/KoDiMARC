@@ -1,0 +1,78 @@
+# Values reported in manuscript Appendix Table A1 are identified below.
+# Remaining fields follow the saved Kanana configuration or script defaults.
+provenance:
+  manuscript_table: Appendix Table A1
+  reported_fields:
+    - model.base_model
+    - model.quant_type
+    - model.max_length
+    - lora.rank
+    - lora.alpha
+    - lora.dropout
+    - training.num_epochs
+    - training.batch_size
+    - training.gradient_accumulation
+    - training.lr
+    - training.warmup_steps
+    - training.seed
+    - training.early_stopping_patience
+    - training.early_stopping_threshold
+  implementation_defaults:
+    - model.dtype
+    - model.device
+    - model.device_map
+    - model.num_labels
+    - training.save_steps
+    - training.logging_steps
+    - training.eval_steps
+    - training.dataloader_num_workers
+    - training.logging_dir
+    - training.gradient_checkpointing
+    - training.load_best_model_at_end
+
+model:
+  base_model: kakaocorp/kanana-1.5-8b-instruct-2505
+  dtype: bfloat16
+  device: null
+  device_map: auto
+  quant_type: 8bit
+  max_length: 256
+  num_labels: 7
+
+lora:
+  enable: true
+  rank: 64
+  alpha: 128
+  dropout: 0.0
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+
+data:
+  train_path: data/processed/kowiki/dp_sft_train.jsonl
+  valid_path: data/processed/kowiki/dp_sft_valid.jsonl
+  max_length: 256
+  max_samples: null
+
+training:
+  output_dir: outputs/step1_kanana_8b_instruct_2505
+  num_epochs: 1
+  batch_size: 1
+  gradient_accumulation: 16
+  lr: 1.0e-5
+  warmup_steps: 200
+  save_steps: 500
+  logging_steps: 20
+  seed: 42
+  eval_steps: 500
+  dataloader_num_workers: 8
+  logging_dir: logs
+  gradient_checkpointing: true
+  early_stopping_patience: 3
+  early_stopping_threshold: 0.0
+  load_best_model_at_end: true

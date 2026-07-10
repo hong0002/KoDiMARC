@@ -1,103 +1,58 @@
-# Step2: Marker-aware Multi-task Relation Classifier
+# Step2: Marker-Aware Multi-Task Classification
 
-## Overview
-Step2 is a multi-task Korean sentence-pair relation classifier that combines KorNLI labels and AI Malpyeong logic labels. It optionally uses Step1 top-k discourse marker candidates to construct marker-aware views during training and evaluation.
+Step2 jointly trains on KorNLI and AI Malpyeong using a shared decoder-based causal LLM backbone. KorNLI supplies `entailment`, `neutral`, and `contradiction`; AI Malpyeong supplies `forward`, `contrastive`, and `compatible`.
 
-## Recommended Workflow
-The public release is easiest to reproduce if Step2 is approached as a short sequence of explicit stages.
+The source AI Malpyeong values `순접`, `역접`, and `양립` map to `forward`, `contrastive`, and `compatible`. Other discourse categories such as `CAUSAL`, `EXPLAN`, and `COND` belong to the Step1 marker lexicon, not the Step2 LOGIC label space.
 
-### 1. Build the final Step2 JSONL files
-Create the processed Step2 split files and attach Step1 top-k discourse marker fields.
+## Input Schema
 
-```bash
-python scripts/step2/build_final_step2_data.py   --kornli-dir data/raw/kornli   --ai-malpyeong-dir data/raw/ai_malpyeong   --step1-model-name-or-path /path/to/step1_checkpoint   --base-model-name-or-path kakaocorp/kanana-1.5-8b-instruct-2505   --output-dir data/processed/multitask_nli/final   --top-k 5   --fallback
-```
+Each JSONL row contains:
 
-Expected outputs:
-- `data/processed/multitask_nli/final/train.jsonl`
-- `data/processed/multitask_nli/final/dev_nli.jsonl`
-- `data/processed/multitask_nli/final/dev_logic.jsonl`
-- `data/processed/multitask_nli/final/test_nli.jsonl`
-- `data/processed/multitask_nli/final/test_logic.jsonl`
-- `data/processed/multitask_nli/final/build_manifest.json`
+- `id`, `source`, `premise`, and `hypothesis`
+- either `nli_label` or `logic_label`; the unused task label is `null`
+- `step1_topk_markers` and aligned `step1_topk_scores`
 
-The generated JSONL files include Step1 marker fields such as:
-- `step1_topk_markers`
-- `step1_topk_scores`
-- `step1_top1_marker`
-- `step1_s2_top1`
-- `step1_s2_topk`
-- `step1_status`
+`data/sample/step2_sample.jsonl` illustrates NLI and LOGIC rows. Full data are written to `data/processed/multitask_nli/final/` by `scripts/step2/build_final_step2_data.py`.
 
-### 2. Train the marker-aware classifier
-Run the public example config. The default example reflects the marker-sensitive main setting with KL consistency disabled.
+## Architecture
 
-```bash
-python scripts/step2/train_step2.py   --config configs/step2/step2_full_example.yaml
-```
+`src/kodimarc/step2/loader.py` loads the decoder-based causal LLM backbone with 8-bit quantization and LoRA. `src/kodimarc/step2/model.py` applies:
 
-Expected output:
-- a timestamped run directory under `outputs/marker_sensitive/`
+- last-valid-token pooling for the sentence-pair representation
+- marker-span pooling for the marker representation
+- a base-delta prediction head
+- task-specific 3-way NLI and 3-way LOGIC heads
+- a 2-way MREL head
 
-### 3. Evaluate the saved run
-Evaluate the trained run with the saved `config_used.yaml` file.
+The input views are:
+
+- **NO**: no candidate marker
+- **WITH**: the Step1 predicted marker
+- **WRONG**: a marker sampled from a label-specific forbidden category
+
+Training combines clean View1/View2 classification, marker dropout, marker corruption, MREL, supervised contrastive learning, and a WITH-WRONG margin objective. The implementation is in `src/kodimarc/step2/trainer.py` and `src/kodimarc/step2/losses.py`.
+
+## Training and Evaluation
 
 ```bash
-python scripts/step2/evaluate_step2.py   --config /path/to/run_dir/config_used.yaml   --exp marker_sensitive
+python scripts/step2/train_step2.py \
+  --config configs/manuscript/step2_full.yaml
 ```
 
-Expected outputs include evaluation files under the saved run directory.
+Training creates a timestamped run directory beneath `outputs/marker_sensitive/`, saves `config_used.yaml`, and evaluates the selected checkpoint. To repeat evaluation:
 
-## Lower-level Data Preparation Helper
-A lower-level helper is also provided:
 ```bash
-python scripts/step2/prepare_step2_data.py   --kornli-dir data/raw/kornli   --ai-malpyeong-dir data/raw/ai_malpyeong   --output-dir data/processed/multitask_nli/base
+STEP2_RUN_CONFIG=$(find outputs/marker_sensitive \
+  -mindepth 2 -maxdepth 2 -name config_used.yaml | sort | tail -n 1)
+
+python scripts/step2/evaluate_step2.py \
+  --config "$STEP2_RUN_CONFIG" \
+  --exp marker_sensitive \
+  --output-subdir test_eval
 ```
-This helper only builds the merged KorNLI and AI Malpyeong JSONL files. It does not attach Step1 top-k marker predictions by itself.
 
-## Input Fields
-The primary Step2 inputs are:
-- `premise`
-- `hypothesis`
-- `nli_label` for KorNLI examples
-- `logic_label` for AI Malpyeong examples
-- `step1_topk_markers`
-- `step1_topk_scores`
+The evaluator writes metrics, confusion matrices, transition analyses, and marker-category reports for NO, WITH, and WRONG modes.
 
-## Multi-task Setup
-The classifier jointly learns:
-- Korean NLI labels: `entailment`, `neutral`, `contradiction`
-- Logic labels: `forward`, `contrastive`, `compatible` (corresponding to the Korean labels used in AI Malpyeong)
+## Ablations
 
-## Views
-### No-marker View
-The no-marker view always omits the discourse marker candidate.
-
-### Predicted-marker View
-The predicted-marker view uses the top-ranked Step1 candidate marker or another sampled candidate from the Step1 top-k list.
-
-## Marker Dropout
-Marker dropout stochastically removes the predicted marker during training, which regularizes the model against over-reliance on Step1 predictions.
-
-## Marker Corruption
-Marker corruption replaces the predicted marker with a mismatched candidate. This provides a counterfactual marker signal and is used in the WITH-WRONG margin objective.
-
-## Forbidden-category Wrong Marker Sampling
-For logic supervision, KoDiMARC uses forbidden category mappings to sample wrong markers from categories that should be inconsistent with the gold relation label.
-
-## Base-delta Prediction Head
-The classifier supports a marker-aware base-delta head. The base representation predicts the relation without marker information, while the delta representation captures the additional effect of the marker-aware view.
-
-## Marker Relation Compatibility (MREL)
-MREL provides an auxiliary signal for learning whether a discourse marker is compatible with the gold relation.
-
-## Supervised Contrastive Loss
-A supervised contrastive component can be added across NLI and logic minibatches, optionally using queue-based memory for more negatives.
-
-## WITH-WRONG Margin Loss
-The WITH-WRONG margin objective encourages the predicted-marker view to outperform the wrong-marker view by a configurable margin.
-
-## Evaluation Modes
-- `NO`: evaluate the no-marker view.
-- `WITH`: evaluate the predicted-marker view.
-- `WRONG`: evaluate the wrong-marker view.
+Executable variants are provided for MREL, supervised contrastive learning, marker corruption, and marker dropout under `configs/manuscript/`. Their reported WITH-view metrics are preserved in `artifacts/results/table7_ablation_results.csv`.

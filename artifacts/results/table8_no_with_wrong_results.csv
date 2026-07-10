@@ -1,0 +1,4 @@
+view,ai_malpyeong_accuracy,kornli_accuracy,ai_malpyeong_macro_precision,kornli_macro_precision,ai_malpyeong_macro_recall,kornli_macro_recall,ai_malpyeong_macro_f1,kornli_macro_f1
+NO,0.870,0.865,0.654,0.866,0.657,0.865,0.652,0.865
+WITH,0.874,0.873,0.671,0.873,0.685,0.873,0.674,0.873
+WRONG,0.862,0.861,0.650,0.863,0.651,0.861,0.647,0.861

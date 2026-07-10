@@ -1,12 +1,21 @@
-seed: 43
+# The ablation switch and reported metrics are supported by saved experiment artifacts.
+# Shared settings follow the full configuration and manuscript Appendix Table A2.
+provenance:
+  source_run_id: 20260316_162133__kakaocorp__kanana-1.5-8b-instruct-2505
+  manuscript_table: Table 7
+  ablation: marker dropout disabled
+
+seed: 42
 device: auto
+
 paths:
-  train_jsonl: datasets/processed/multitask_nli/final/train.jsonl
-  dev_kornli_jsonl: datasets/processed/multitask_nli/final/dev_nli.jsonl
-  dev_ai_jsonl: datasets/processed/multitask_nli/final/dev_logic.jsonl
-  test_nli_jsonl: datasets/processed/multitask_nli/final/test_nli.jsonl
-  test_logic_jsonl: datasets/processed/multitask_nli/final/test_logic.jsonl
-  outputs_root: outputs/marker_sensitive
+  train_jsonl: data/processed/multitask_nli/final/train.jsonl
+  dev_kornli_jsonl: data/processed/multitask_nli/final/dev_nli.jsonl
+  dev_ai_jsonl: data/processed/multitask_nli/final/dev_logic.jsonl
+  test_nli_jsonl: data/processed/multitask_nli/final/test_nli.jsonl
+  test_logic_jsonl: data/processed/multitask_nli/final/test_logic.jsonl
+  outputs_root: outputs/marker_sensitive_ablation
+
 model:
   name: kakaocorp/kanana-1.5-8b-instruct-2505
   max_seq_length: 512
@@ -18,15 +27,10 @@ model:
   lora_r: 64
   lora_alpha: 128
   lora_dropout: 0.0
-  target_modules:
-    - q_proj
-    - k_proj
-    - v_proj
-    - o_proj
-    - gate_proj
-    - up_proj
-    - down_proj
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
 marker:
+  source: predicted
   topk_temperature: 0.7
   confidence_gating:
     enabled: false
@@ -34,54 +38,24 @@ marker:
     apply_eval: true
     temperature: 1.0
     min_top1_prob: 0.45
-    min_top1_gap: 0.1
+    min_top1_gap: 0.10
   dropout_nli_start: 0.02
   dropout_nli_end: 0.12
   dropout_logic_start: 0.05
-  dropout_logic_end: 0.2
-  dropout_unk_boost: 0.1
-  corrupt_prob_nli_start: 0.0
+  dropout_logic_end: 0.20
+  dropout_unk_boost: 0.10
+  corrupt_prob_nli_start: 0.00
   corrupt_prob_nli_end: 0.02
   corrupt_prob_logic_start: 0.01
   corrupt_prob_logic_end: 0.05
   logic_forbidden_categories:
-    역접:
-      - CAUSAL
-      - COND
-      - ADD
-      - EXAMPLE
-      - EXPLAN
-    순접:
-      - CONTRAST
-      - CONCESS
-      - CAUSAL
-    양립:
-      - CONTRAST
-      - CONCESS
-      - CAUSAL
-      - COND
-    인과:
-      - CONTRAST
-      - CONCESS
-      - COND
-    양보:
-      - CAUSAL
-      - ADD
-      - EXAMPLE
-    조건:
-      - CAUSAL
-      - CONTRAST
-      - CONCESS
-    설명:
-      - CONTRAST
-      - CONCESS
-      - COND
-    예시:
-      - CONTRAST
-      - CONCESS
-      - CAUSAL
+    순접: [CONTRAST, CONCESS, CAUSAL]
+    역접: [CAUSAL, COND, ADD, EXAMPLE, EXPLAN]
+    양립: [CONTRAST, CONCESS, CAUSAL, COND]
+
 prompt:
   style: candidate_marker_hypothesis
+
 loss:
   lambda_kl: 0.0
   gamma_mrel: 0.2
@@ -98,11 +72,12 @@ loss:
     weight: 0.2
     margin: 0.2
     only_clean: true
+
 train:
   epochs: 1
   batch_size: 2
   grad_accum_steps: 8
-  lr: 1.0e-05
+  lr: 1.0e-5
   weight_decay: 0.0
   warmup_ratio: 0.03
   max_grad_norm: 1.0
@@ -118,20 +93,24 @@ train:
   task_ratio:
     nli: 3
     logic: 1
+
 evaluation:
   enable_wrong_marker_eval: true
-selection_weights:
-  'no': 0.0
-  with: 1.0
-  wrong: 0.0
+
 selection:
   metric: with_only
   base_metric: macro_f1
   gap_weight: 0.0
+
+selection_weights:
+  "no": 0.0
+  with: 1.0
+  wrong: 0.0
+
 experiments:
-  - name: marker_sensitive
+  - name: marker_sensitive_no_dropout
     enable_kl: true
-    enable_dropout: true
+    enable_dropout: false
     enable_corruption: true
     enable_mrel: true
     enable_supcon: true

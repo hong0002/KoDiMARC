@@ -9,7 +9,6 @@ from pathlib import Path
 
 import torch
 import yaml
-from transformers import EarlyStoppingCallback, Trainer, TrainingArguments, default_data_collator
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -46,6 +45,9 @@ def main():
         help="Path to a YAML configuration file.",
     )
     args = parser.parse_args()
+
+    # Keep CLI inspection independent of the optional model-training stack.
+    from transformers import EarlyStoppingCallback, Trainer, TrainingArguments, default_data_collator
 
     cfg = load_config(args.config)
     model_cfg = cfg["model"]

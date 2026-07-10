@@ -1,0 +1,18 @@
+dataset,gold_label,n,rank,marker,marker_gloss,count,ratio_within_label
+AI Malpyeong,forward,125,1,따라서,therefore,72,0.576
+AI Malpyeong,forward,125,2,오히려,rather,48,0.384
+AI Malpyeong,forward,125,3,때문에,because,2,0.016
+AI Malpyeong,compatible,12,1,오히려,rather,9,0.750
+AI Malpyeong,compatible,12,2,따라서,therefore,3,0.250
+AI Malpyeong,contrastive,132,1,오히려,rather,69,0.523
+AI Malpyeong,contrastive,132,2,그럼에도,nevertheless,35,0.265
+AI Malpyeong,contrastive,132,3,하지만,however,20,0.152
+KorNLI,contradiction,1652,1,면,if/when,859,0.520
+KorNLI,contradiction,1652,2,하지만,however,579,0.350
+KorNLI,contradiction,1652,3,또한,also,106,0.064
+KorNLI,entailment,1651,1,면,if/when,775,0.469
+KorNLI,entailment,1651,2,하지만,however,635,0.385
+KorNLI,entailment,1651,3,또한,also,130,0.079
+KorNLI,neutral,1651,1,면,if/when,959,0.581
+KorNLI,neutral,1651,2,하지만,however,509,0.308
+KorNLI,neutral,1651,3,또한,also,94,0.057

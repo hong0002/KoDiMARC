@@ -1,125 +1,64 @@
-# Step1: Discourse Marker Generator
+# Step1: Discourse-Marker Generation
 
-## Overview
-Step1 constructs weakly supervised Korean discourse marker data from adjacent KoWiki sentence pairs. It detects explicit discourse markers in the hypothesis, removes the marker span, and converts the result into response-only SFT training data.
+Step1 derives weak supervision from explicit Korean discourse markers in adjacent KoWiki sentences. It trains a response-only SFT generator and scores a fixed marker lexicon to provide top-k candidates for Step2.
 
-## Recommended Workflow
-The public release is easier to follow when Step1 is run as a sequence of small, explicit steps.
+## Labels and Data Schema
 
-### 1. Build adjacent sentence pairs
-Use the sentence-pair builder to convert extracted KoWiki documents into adjacent sentence pairs.
+The Step1 labels are the seven discourse-function categories defined in `src/kodimarc/common/markers.py`:
 
-```bash
-python scripts/step1/build_sentence_pairs.py   --input-dir /path/to/kowiki/extracted   --output-jsonl data/processed/kowiki/wiki_pairs.jsonl
-```
+`ADD`, `CONTRAST`, `CAUSAL`, `EXPLAN`, `CONCESS`, `COND`, and `EXAMPLE`.
 
-Expected output:
-- `data/processed/kowiki/wiki_pairs.jsonl`
+These labels describe KoWiki-derived marker categories. They are not AI Malpyeong LOGIC labels.
 
-### 2. Detect and remove discourse markers
-Run the rule-based detector to find explicit discourse markers and create marker-removed hypotheses.
+Rule-based preprocessing produces records with:
 
-```bash
-python scripts/step1/detect_and_remove_markers.py   --input-jsonl data/processed/kowiki/wiki_pairs.jsonl   --output-jsonl data/processed/kowiki/wiki_pairs_labeled.jsonl
-```
+- `s1`: first sentence
+- `s2`: original second sentence
+- `s2_no_marker`: second sentence after removing the detected marker
+- `label`: one of the seven Step1 categories
+- `marker`: detected marker surface form
 
-Expected output:
-- `data/processed/kowiki/wiki_pairs_labeled.jsonl`
+`data/sample/step1_sample.jsonl` contains two schema examples.
 
-### 3. Build response-only SFT data
-Convert the weak supervision JSONL into train, validation, and test splits for response-only SFT.
+## Data Construction
+
+Extract a KoWiki dump to `data/raw/kowiki/extracted/`, then run:
 
 ```bash
-python scripts/step1/build_sft_data.py   --input-jsonl data/processed/kowiki/wiki_pairs_labeled.jsonl   --train-output data/processed/kowiki/dp_sft_train.jsonl   --valid-output data/processed/kowiki/dp_sft_valid.jsonl   --test-output data/processed/kowiki/dp_sft_test.jsonl
+python scripts/step1/build_sentence_pairs.py \
+  --input-dir data/raw/kowiki/extracted \
+  --output-jsonl data/processed/kowiki/wiki_pairs.jsonl
+
+python scripts/step1/detect_and_remove_markers.py \
+  --input-jsonl data/processed/kowiki/wiki_pairs.jsonl \
+  --output-jsonl data/processed/kowiki/wiki_pairs_labeled.jsonl
+
+python scripts/step1/build_sft_data.py \
+  --input-jsonl data/processed/kowiki/wiki_pairs_labeled.jsonl \
+  --train-output data/processed/kowiki/dp_sft_train.jsonl \
+  --valid-output data/processed/kowiki/dp_sft_valid.jsonl \
+  --test-output data/processed/kowiki/dp_sft_test.jsonl
 ```
 
-Expected outputs:
-- `data/processed/kowiki/dp_sft_train.jsonl`
-- `data/processed/kowiki/dp_sft_valid.jsonl`
-- `data/processed/kowiki/dp_sft_test.jsonl`
+The SFT records contain `instruction`, `input`, `output`, `label`, and `marker`. The loss is applied to the response tokens that generate the marker.
 
-### 4. Train the Step1 generator
-Train the discourse marker generator with the example Step1 config.
+## Generator Training
+
+The executable Kanana configuration is `configs/manuscript/step1_kanana_8b_instruct_2505.yaml`:
 
 ```bash
-python scripts/step1/train_step1_generator.py   --config configs/step1/step1_sft_example.yaml
+python scripts/step1/train_step1_generator.py \
+  --config configs/manuscript/step1_kanana_8b_instruct_2505.yaml
 ```
 
-Expected output:
-- a local Step1 checkpoint directory under the output path defined in the config
+Appendix Table A1 reports 8-bit loading, maximum sequence length 256, one epoch, per-device batch size 1, gradient accumulation 16, AdamW with learning rate `1.0e-5`, 200 warmup steps, LoRA rank 64/alpha 128/dropout 0.0, early-stopping patience 3, and seed 42. The YAML identifies additional implementation defaults separately.
 
-### 5. Score top-k candidate markers
-Use the trained Step1 generator to attach top-k candidate markers and scores to downstream sentence pairs.
+## Top-k Scoring
 
-```bash
-python scripts/step1/score_topk_markers.py   --input-jsonl data/processed/multitask_nli/train.jsonl   --output-jsonl data/processed/multitask_nli/train_with_step1_topk.jsonl   --model-name-or-path /path/to/step1_checkpoint   --base-model-name-or-path kakaocorp/kanana-1.5-8b-instruct-2505   --top-k 5   --fallback
-```
+`scripts/step1/score_topk_markers.py` computes each lexicon candidate's conditional log-likelihood and writes:
 
-Expected output:
-- `data/processed/multitask_nli/train_with_step1_topk.jsonl`
-
-## Discourse Marker Lexicon
-The rule-based detector uses a fixed discourse marker lexicon covering the following coarse categories:
-- `ADD`
-- `CONTRAST`
-- `CAUSAL`
-- `EXPLAN`
-- `CONCESS`
-- `COND`
-- `EXAMPLE`
-
-The Korean marker strings themselves are preserved because they are part of the actual model input and output space.
-
-## Marker Detection on KoWiki Sentence Pairs
-The public release follows a simple explicit-marker extraction pipeline:
-1. Split Korean Wikipedia documents into adjacent sentence pairs.
-2. Detect discourse markers at the beginning of the hypothesis.
-3. Also detect comma-delimited intra-sentence discourse markers when they match the lexicon.
-4. Keep only examples for which the marker can be mapped to one of the coarse categories.
-
-## Marker Removal
-When a marker is detected, the script writes a marker-removed hypothesis field:
-- `s2`: original hypothesis
-- `s2_no_marker`: marker-removed hypothesis
-
-## Weak Supervision JSONL Format
-The rule-based detection step writes JSONL rows of the form:
-```json
-{
-  "s1": "문장1",
-  "s2": "그러나 문장2",
-  "s2_no_marker": "문장2",
-  "label": "CONTRAST",
-  "marker": "그러나"
-}
-```
-
-## Response-only SFT Format
-The SFT builder converts the weak supervision into response-only training examples:
-```json
-{
-  "instruction": "...",
-  "input": "...",
-  "output": "그러나",
-  "label": "CONTRAST",
-  "marker": "그러나"
-}
-```
-Only the output tokens are used for language-model loss.
-
-## Top-k Marker Scoring
-The public scoring script loads a trained Step1 generator, prompts it with a sentence pair, and aggregates multiple generations into top-k candidate markers. The output attaches the following fields:
 - `step1_topk_markers`
 - `step1_topk_scores`
-- `step1_top1_marker`
-- `step1_top1_score`
+- `top1_marker`
 
-## Output Fields for Step2
-After Step1 scoring, downstream Step2 data can include:
-- `step1_topk_markers`
-- `step1_topk_scores`
-- `step1_top1_marker`
-- `step1_top1_score`
-- `premise_marked`
-- `hypothesis_marked`
-- `pair_marked`
+For the full pipeline, `scripts/step2/build_final_step2_data.py` prepares KorNLI and AI Malpyeong splits and invokes the scorer for each split. See the root README for the complete command.
