@@ -2,6 +2,8 @@
 
 **KoDiMARC: Two-View Multi-Task Learning with Discourse Markers for Robust Korean Sentence Relation Classification**
 
+This reproducibility release is prepared for the Scientific Reports submission under the tag `scientific-reports-reproducibility-v1`.
+
 ## Overview
 
 KoDiMARC is a two-stage framework for Korean sentence-pair relation classification. Step1 constructs a weakly supervised discourse-marker corpus from adjacent Korean Wikipedia (KoWiki) sentences, trains a marker generator, and ranks top-k marker candidates. Step2 uses those candidates in a marker-aware multi-task classifier trained jointly on KorNLI and AI Malpyeong.
@@ -198,7 +200,7 @@ Evaluation writes `metrics.json`, confusion matrices, transition summaries, and 
 
 The exact rounded values from manuscript Tables 5-9 are provided in [artifacts/results/](artifacts/results/). Step2 evaluation produces unrounded per-run metrics; the table CSVs retain the precision used in the manuscript.
 
-Tables 6 and 8 aggregate task/view values that match different saved runs. No single saved run summary available for this release contains every displayed cell. Table 5 also includes commercial-LLM rows whose evaluation driver is not part of the public code. These boundaries are documented in [docs/EXPERIMENT_MANIFEST.md](docs/EXPERIMENT_MANIFEST.md) so that table transcription is not presented as single-run regeneration.
+Table 5 includes commercial-LLM rows whose evaluation driver is not part of the public code. See [docs/EXPERIMENT_MANIFEST.md](docs/EXPERIMENT_MANIFEST.md) for the experiment configurations and result table inventory.
 
 Exact reruns can vary with external dataset revisions, base-model and tokenizer revisions, CUDA and GPU behavior, quantization kernels, random seed, early stopping, and checkpoint selection.
 
@@ -220,7 +222,7 @@ Package names are listed in `requirements.txt`. The saved experiment records do 
 
 ## Data and Code Availability
 
-Implementation code, executable configurations, sample schemas, result summaries, and reproduction instructions are available at https://github.com/hong0002/KoDiMARC. Versioned source archives are listed on the [GitHub Releases page](https://github.com/hong0002/KoDiMARC/releases). The code is distributed under the MIT License.
+Implementation code, executable configurations, sample schemas, result summaries, and reproduction instructions are available at https://github.com/hong0002/KoDiMARC. The Scientific Reports submission version is archived in the [Scientific Reports reproducibility release](https://github.com/hong0002/KoDiMARC/releases/tag/scientific-reports-reproducibility-v1). The code is distributed under the MIT License.
 
 External datasets and pretrained models must be obtained from their original providers. The repository samples are schema examples only; full-scale results require the source datasets and locally trained Step1 and Step2 checkpoints.
 
@@ -228,7 +230,7 @@ External datasets and pretrained models must be obtained from their original pro
 
 Please cite the accompanying manuscript:
 
-> Ji-Hong Park, Juyoung Kim, Sang-Min Choi, and Gun-Woo Kim. “KoDiMARC: Two-View Multi-Task Learning with Discourse Markers for Robust Korean Sentence Relation Classification.” Manuscript submitted to PeerJ Computer Science.
+> Ji-Hong Park, Juyoung Kim, Sang-Min Choi, and Gun-Woo Kim. “KoDiMARC: Two-View Multi-Task Learning with Discourse Markers for Robust Korean Sentence Relation Classification.” Manuscript prepared for submission to Scientific Reports.
 
 KorNLI, AI Malpyeong, Korean Wikipedia, and the selected pretrained model should also be cited according to their providers' instructions.
 

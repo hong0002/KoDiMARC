@@ -54,6 +54,6 @@ Every literal script option shown there is exposed by the corresponding CLI. Use
 
 ## Numerical Scope
 
-The CSV files under `artifacts/results/` preserve the values and precision shown in the manuscript. Tables 6 and 8 combine task/view values that match different saved runs; a single saved run summary containing every displayed cell was not available. The commercial-LLM evaluation driver for all Table 5 rows is also not included. `docs/EXPERIMENT_MANIFEST.md` records these boundaries and the available run-level evidence.
+The CSV files under `artifacts/results/` preserve the values and precision shown in the manuscript. The repository does not include the evaluation driver for the commercial-LLM rows in Table 5. See [the experiment manifest](EXPERIMENT_MANIFEST.md) for the result table inventory.
 
 Numerical reruns remain sensitive to external dataset revisions, model/tokenizer revisions, CUDA and GPU behavior, quantization kernels, random seed, early stopping, and checkpoint selection. The dependency list contains package names because the saved records do not provide a complete package lock for the training environment.

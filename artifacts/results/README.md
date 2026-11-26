@@ -10,4 +10,4 @@ The CSV files in this directory preserve the values reported in manuscript Table
 | `table8_no_with_wrong_results.csv` | Table 8, diagnostic views | Transcribed from the manuscript table. NO, WITH, and WRONG metrics are written by `scripts/step2/evaluate_step2.py`. |
 | `table9_marker_distribution.csv` | Table 9, marker distribution | Cleaned from the saved test-split marker-count summary and checked against the manuscript table. |
 
-Run-level provenance and known aggregation limits are documented in [`docs/EXPERIMENT_MANIFEST.md`](../../docs/EXPERIMENT_MANIFEST.md). Full regeneration requires the external datasets and trained checkpoints described in the main README.
+The experiment configurations are listed in [`docs/EXPERIMENT_MANIFEST.md`](../../docs/EXPERIMENT_MANIFEST.md). Full regeneration requires the external datasets and trained checkpoints described in the main README.
